@@ -24,6 +24,17 @@ double vec3_distance(const Vec3 *a, const Vec3 *b)
     return vec3_length(&diff);
 }
 
+void vec3_normalize(Vec3 *v)
+{
+    double length = vec3_length(v);
+    if (length > 0)
+    {
+        v->x /= length;
+        v->y /= length;
+        v->z /= length;
+    }
+}
+
 GnssResult compute_pseudorange(
     const Satellite *sat,
     const Receiver *receiver)
@@ -56,4 +67,11 @@ void compute_pseudoranges(
         GnssResult *result = results + satellite_index;
         *result = compute_pseudorange(satellite, receiver);
     }
+}
+
+double compute_residue(
+    double measured_pseudorange,
+    double estimated_pseudorange)
+{
+    return measured_pseudorange - estimated_pseudorange;
 }
