@@ -48,3 +48,7 @@ void compute_pseudoranges(
     size_t satellite_count,
     const Receiver *receiver,
     GnssResult *results);
+
+double compute_residue(
+    double measured_pseudorange,
+    double estimated_pseudorange);

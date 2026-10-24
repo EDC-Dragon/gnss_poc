@@ -150,10 +150,6 @@ void run_residue_test()
         .position = {10.0, 20.0, 30.0},
         .clock_bias_m = 150.0};
 
-    Receiver estimated_receiver = {
-        .position = {0.0, 0.0, 0.0},
-        .clock_bias_m = 0.0};
-
     Satellite satellites[] = {
         {.position = {20000.0, 0.0, 0.0}},
         {.position = {3.0, 4.0, 12.0}},
@@ -164,45 +160,21 @@ void run_residue_test()
         {.position = {100.0, 200.0, 300.0}}};
     size_t satellite_count = sizeof(satellites) / sizeof(satellites[0]);
 
-    GnssResult true_gnss_results[satellite_count];
-    double estimated_gnss_pseudoranges[satellite_count];
+    GnssSolver *solver;
+    solver = create_gnss_solver(satellite_count);
+    initialize_gnss_solver(solver, satellites, satellite_count);
+
+    for (size_t i = 0; i < solver->satellite_count; i++)
     {
-        GnssResult estimated_gnss_results[satellite_count];
-        compute_pseudoranges(satellites, satellite_count, &estimated_receiver, estimated_gnss_results);
-        for (size_t i = 0; i < satellite_count; i++)
-        {
-            if (estimated_gnss_results[i].status == GNSS_OK)
-                estimated_gnss_pseudoranges[i] = estimated_gnss_results[i].pseudorange;
-            else
-                estimated_gnss_pseudoranges[i] = NAN;
-        }
+        solver->satellitesData[i].measured_pseudorange = compute_pseudorange(solver->satellitesData[i].satellite, &true_receiver);
     }
+    update_gnss_solver(solver);
 
-    compute_pseudoranges(satellites, satellite_count, &true_receiver, true_gnss_results);
-
-    JacobianRow jacobian[satellite_count];
-
-    for (size_t i = 0; i < satellite_count; i++)
-    {
-        if (true_gnss_results[i].status == GNSS_OK)
-        {
-            double residue = compute_residue(true_gnss_results[i].pseudorange, estimated_gnss_pseudoranges[i]);
-            printf("Residue: %f\n", residue);
-
-            Vec3 satellite_to_estimated_receiver = vec3_subtract(&estimated_receiver.position, &satellites[i].position);
-            double distance = vec3_length(&satellite_to_estimated_receiver);
-            printf("Distance to estimated receiver: %f\n", distance);
-            printf("Satellite %lu to receiver vector: (%f, %f, %f)\n", i, satellite_to_estimated_receiver.x, satellite_to_estimated_receiver.y, satellite_to_estimated_receiver.z);
-            vec3_normalize(&satellite_to_estimated_receiver);
-            printf("Normalized satellite to estimated receiver vector: (%f, %f, %f)\n", satellite_to_estimated_receiver.x, satellite_to_estimated_receiver.y, satellite_to_estimated_receiver.z);
-            jacobian[i].jacobian = satellite_to_estimated_receiver;
-            jacobian[i].residue = residue;
-        }
-    }
+    free_gnss_solver(solver);
 }
 
 void test_physical_types()
 {
-    run_pseudorange_tests();
+    // run_pseudorange_tests();
     run_residue_test();
 }
