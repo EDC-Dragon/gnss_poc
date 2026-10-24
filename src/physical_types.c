@@ -24,13 +24,36 @@ double vec3_distance(const Vec3 *a, const Vec3 *b)
     return vec3_length(&diff);
 }
 
-double compute_pseudorange(
+GnssResult compute_pseudorange(
     const Satellite *sat,
     const Receiver *receiver)
 {
+    if (!sat || !receiver)
+        return (GnssResult){.status = GNSS_INVALID_ARGUMENT};
+
     double distance = vec3_distance(&sat->position, &receiver->position);
 
-    double pseudorange = distance + receiver->clock_bias_m;
+    double evaluated_pseudorange = distance + receiver->clock_bias_m;
 
-    return pseudorange;
+    if (!isfinite(evaluated_pseudorange))
+        return (GnssResult){.status = GNSS_NUMERICAL_ERROR};
+
+    return (GnssResult){.status = GNSS_OK, .pseudorange = evaluated_pseudorange};
+}
+
+void compute_pseudoranges(
+    const Satellite *satellites,
+    size_t satellite_count,
+    const Receiver *receiver,
+    GnssResult *results)
+{
+    if (!satellites || !receiver || !results || satellite_count <= 0)
+        return;
+
+    for (size_t satellite_index = 0; satellite_index < satellite_count; satellite_index++)
+    {
+        const Satellite *satellite = satellites + satellite_index;
+        GnssResult *result = results + satellite_index;
+        *result = compute_pseudorange(satellite, receiver);
+    }
 }

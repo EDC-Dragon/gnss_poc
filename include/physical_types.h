@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 #define C_MS 299792458.0
 
 typedef struct
@@ -23,6 +25,25 @@ typedef struct
     Vec3 position;
 } Satellite;
 
-double compute_pseudorange(
+typedef enum
+{
+    GNSS_OK,
+    GNSS_INVALID_ARGUMENT,
+    GNSS_NUMERICAL_ERROR
+} GnssStatus;
+
+typedef struct
+{
+    GnssStatus status;
+    double pseudorange;
+} GnssResult;
+
+GnssResult compute_pseudorange(
     const Satellite *sat,
     const Receiver *receiver);
+
+void compute_pseudoranges(
+    const Satellite *satellites,
+    size_t satellite_count,
+    const Receiver *receiver,
+    GnssResult *results);
