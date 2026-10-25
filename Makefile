@@ -5,7 +5,7 @@ LDLIBS = -lm
 
 BUILD_DIR = build
 
-CODE_SRC = src/physical_types.c src/gnss_solver.c src/gnss_math.c src/gnss_simulation.c
+CODE_SRC = src/gnss_types.c src/gnss_solver.c src/gnss_math.c src/gnss_simulation.c src/gnss_satellite.c src/gnss_receiver.c
 
 TARGET = $(BUILD_DIR)/gnss_poc
 SRC = $(CODE_SRC) src/main.c 

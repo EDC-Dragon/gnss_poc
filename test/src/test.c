@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "physical_types.h"
 #include "test_physical_types.h"
 
 int main(int argc, char *argv[])

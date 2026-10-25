@@ -4,10 +4,11 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "physical_types.h"
+#include "gnss_types.h"
 #include "gnss_solver.h"
 #include "gnss_math.h"
 #include "gnss_simulation.h"
+#include "gnss_receiver.h"
 
 typedef struct PseudoRangeTestCase
 {

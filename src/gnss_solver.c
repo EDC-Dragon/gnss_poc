@@ -5,7 +5,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "physical_types.h"
+#include "gnss_types.h"
+#include "gnss_simulation.h"
+#include "gnss_math.h"
+#include "gnss_receiver.h"
 
 GnssSolver *gnss_solver_create(size_t max_satellite_count)
 {

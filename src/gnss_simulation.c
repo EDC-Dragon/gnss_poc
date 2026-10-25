@@ -1,8 +1,37 @@
 #include "gnss_simulation.h"
 
+#include <math.h>
+#include <stddef.h>
+
+#include "gnss_types.h"
 #include "gnss_solver.h"
-#include "physical_types.h"
 #include "gnss_math.h"
+#include "gnss_satellite.h"
+#include "gnss_receiver.h"
+
+GnssMeasurement simulate_pseudorange_measurement(
+    const Satellite *sat,
+    const Receiver *true_receiver,
+    double arrival_time_s)
+{
+    if (!sat || !true_receiver)
+        return (GnssMeasurement){.status = GNSS_INVALID_ARGUMENT};
+
+    double distance = vec3_distance(&sat->position, &true_receiver->position);
+
+    double pseudorange = distance + true_receiver->clock_bias_m;
+
+    if (!isfinite(pseudorange))
+        return (GnssMeasurement){.status = GNSS_NUMERICAL_ERROR};
+
+    double noise = sat->error_model.bias_m + gaussian_noise(sat->error_model.noise_sigma_m);
+    double pseudorange_with_noise = pseudorange + noise;
+    double sigma_m = sat->error_model.noise_sigma_m;
+
+    double transmission_time_s = sat->time_s - distance / C_MS;
+
+    return (GnssMeasurement){.status = GNSS_OK, .pseudorange = pseudorange_with_noise, .sigma_m = sigma_m, .transmission_time_s = transmission_time_s, .arrival_time_s = arrival_time_s};
+}
 
 void gnss_simulated_receiver_init(GnssSimulatedReceiver *receiver, Receiver true_receiver)
 {
