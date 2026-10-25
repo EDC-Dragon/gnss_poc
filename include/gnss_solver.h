@@ -1,10 +1,13 @@
 #pragma once
 
+#include <stddef.h>
+#include <stdbool.h>
+
 #include "physical_types.h"
 
 typedef struct
 {
-    Vec3 jacobian;
+    double jacobian[4];
     double residue;
 } GnssObservation;
 
@@ -20,15 +23,37 @@ typedef struct
 
 typedef struct
 {
+    double A[4][4];
+    double B[4];
+    double state_correction[4];
+} GnssSystem;
+
+typedef struct
+{
     GnssSatelliteData *satellitesData;
     size_t satellite_count;
+
+    GnssSystem system;
+
     Receiver estimated_receiver;
 } GnssSolver;
 
-GnssSolver *create_gnss_solver(size_t max_satellite_count);
+GnssSolver *gnss_solver_create(size_t max_satellite_count);
 
-void initialize_gnss_solver(GnssSolver *solver, Satellite *satellites, size_t satellite_count);
+void gnss_solver_initialize(GnssSolver *solver, Satellite *satellites, size_t satellite_count);
 
-void update_gnss_solver(GnssSolver *solver);
+void gnss_solver_update(GnssSolver *solver);
 
-void free_gnss_solver(GnssSolver *solver);
+void gnss_solver_build_system(GnssSolver *solver);
+
+void gnss_solver_print_system(GnssSolver *solver);
+
+void gnss_solver_solve_system(GnssSolver *solver);
+
+void gnss_solver_apply_system_correction(GnssSolver *solver);
+
+void gnss_solver_print_estimated_receiver(GnssSolver *solver);
+
+void gnss_solver_iterate(GnssSolver *solver, int max_iterations, bool verbose);
+
+void gnss_solver_free(GnssSolver *solver);

@@ -144,37 +144,57 @@ void run_pseudorange_tests()
     }
 }
 
-void run_residue_test()
+void run_basic_gnss_test()
 {
     Receiver true_receiver = {
-        .position = {10.0, 20.0, 30.0},
+        .position = {4200000.0, 170000.0, 4780000.0},
         .clock_bias_m = 150.0};
 
     Satellite satellites[] = {
-        {.position = {20000.0, 0.0, 0.0}},
-        {.position = {3.0, 4.0, 12.0}},
-        {.position = {1000.0, 0.0, 0.0}},
-        {.position = {-3.0, -4.0, -12.0}},
-        {.position = {13.0, 24.0, 36.0}},
-        {.position = {20000000.0, 0.0, 0.0}},
-        {.position = {100.0, 200.0, 300.0}}};
+        {.position = {15600000.0, 7540000.0, 20140000.0}},
+        {.position = {18760000.0, 2750000.0, 18610000.0}},
+        {.position = {17610000.0, 14630000.0, 13480000.0}},
+        {.position = {19170000.0, 610000.0, 18390000.0}},
+        {.position = {17800000.0, -13400000.0, 14600000.0}},
+        {.position = {-13400000.0, 10200000.0, 21000000.0}}};
     size_t satellite_count = sizeof(satellites) / sizeof(satellites[0]);
 
     GnssSolver *solver;
-    solver = create_gnss_solver(satellite_count);
-    initialize_gnss_solver(solver, satellites, satellite_count);
+    solver = gnss_solver_create(satellite_count);
+    gnss_solver_initialize(solver, satellites, satellite_count);
 
     for (size_t i = 0; i < solver->satellite_count; i++)
     {
         solver->satellitesData[i].measured_pseudorange = compute_pseudorange(solver->satellitesData[i].satellite, &true_receiver);
     }
-    update_gnss_solver(solver);
 
-    free_gnss_solver(solver);
+    gnss_solver_iterate(solver, 100, true);
+
+    gnss_solver_free(solver);
 }
+
+/*
+bool is_symmetric = true;
+for (int i = 0; i < 4; i++)
+{
+    for (int j = i + 1; j < 4; j++)
+    {
+        if (solver->system.A[i][j] != solver->system.A[j][i])
+        {
+            printf("System A[%d][%d] is NOT symmetric: %f vs %f\n", i, j, solver->system.A[i][j], solver->system.A[j][i]);
+            is_symmetric = false;
+        }
+    }
+}
+if (!is_symmetric)
+{
+    printf("System A is NOT symmetric\n");
+}
+
+*/
 
 void test_physical_types()
 {
     // run_pseudorange_tests();
-    run_residue_test();
+    run_basic_gnss_test();
 }
