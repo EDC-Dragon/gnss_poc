@@ -6,6 +6,8 @@
 
 #include "physical_types.h"
 #include "gnss_solver.h"
+#include "gnss_math.h"
+#include "gnss_simulation.h"
 
 typedef struct PseudoRangeTestCase
 {
@@ -146,29 +148,73 @@ void run_pseudorange_tests()
 
 void run_basic_gnss_test()
 {
+    GnssSimulatedReceiver simulated_receiver;
     Receiver true_receiver = {
         .position = {4200000.0, 170000.0, 4780000.0},
         .clock_bias_m = 150.0};
+    gnss_simulated_receiver_init(&simulated_receiver, true_receiver);
+
+    double noise_sigma_ratio = 1.0;
+    double bias_ratio = 1.0;
 
     Satellite satellites[] = {
-        {.position = {15600000.0, 7540000.0, 20140000.0}},
-        {.position = {18760000.0, 2750000.0, 18610000.0}},
-        {.position = {17610000.0, 14630000.0, 13480000.0}},
-        {.position = {19170000.0, 610000.0, 18390000.0}},
-        {.position = {17800000.0, -13400000.0, 14600000.0}},
-        {.position = {-13400000.0, 10200000.0, 21000000.0}}};
+        {.position = {15600000.0, 7540000.0, 20140000.0}, .error_model = {.bias_m = 2.0, .noise_sigma_m = 2.0}},
+        {.position = {18760000.0, 2750000.0, 18610000.0}, .error_model = {.bias_m = 1.0, .noise_sigma_m = 5.0}},
+        {.position = {17610000.0, 14630000.0, 13480000.0}, .error_model = {.bias_m = -2.0, .noise_sigma_m = 1.0}},
+        {.position = {19170000.0, 610000.0, 18390000.0}, .error_model = {.bias_m = -3.0, .noise_sigma_m = 7.0}},
+        {.position = {17800000.0, -13400000.0, 14600000.0}, .error_model = {.bias_m = 2.0, .noise_sigma_m = 8.0}},
+        {.position = {-13400000.0, 10200000.0, 21000000.0}, .error_model = {.bias_m = 1.0, .noise_sigma_m = 2.0}}};
     size_t satellite_count = sizeof(satellites) / sizeof(satellites[0]);
+    for (size_t i = 0; i < satellite_count; i++)
+    {
+        satellites[i].error_model.noise_sigma_m *= noise_sigma_ratio;
+        satellites[i].error_model.bias_m *= bias_ratio;
+    }
 
     GnssSolver *solver;
     solver = gnss_solver_create(satellite_count);
     gnss_solver_initialize(solver, satellites, satellite_count);
 
-    for (size_t i = 0; i < solver->satellite_count; i++)
+    gnss_simulated_evaluate_measurement(&simulated_receiver, solver);
+
+    gnss_solver_solve(solver, 100, 1e-7, false);
+
+    gnss_solver_free(solver);
+}
+
+void run_randomized_gnss_test()
+{
+
+    GnssSimulatedReceiver simulated_receiver;
+    Receiver true_receiver = {
+        .position = {4200000.0, 170000.0, 4780000.0},
+        .clock_bias_m = 150.0};
+    gnss_simulated_receiver_init(&simulated_receiver, true_receiver);
+
+    double noise_sigma_ratio = 1.0;
+    double bias_ratio = 1.0;
+
+    Satellite satellites[] = {
+        {.position = {15600000.0, 7540000.0, 20140000.0}, .error_model = {.bias_m = 2.0, .noise_sigma_m = 2.0}},
+        {.position = {18760000.0, 2750000.0, 18610000.0}, .error_model = {.bias_m = 1.0, .noise_sigma_m = 5.0}},
+        {.position = {17610000.0, 14630000.0, 13480000.0}, .error_model = {.bias_m = -2.0, .noise_sigma_m = 1.0}},
+        {.position = {19170000.0, 610000.0, 18390000.0}, .error_model = {.bias_m = -3.0, .noise_sigma_m = 7.0}},
+        {.position = {17800000.0, -13400000.0, 14600000.0}, .error_model = {.bias_m = 2.0, .noise_sigma_m = 8.0}},
+        {.position = {-13400000.0, 10200000.0, 21000000.0}, .error_model = {.bias_m = 1.0, .noise_sigma_m = 2.0}}};
+    size_t satellite_count = sizeof(satellites) / sizeof(satellites[0]);
+    for (size_t i = 0; i < satellite_count; i++)
     {
-        solver->satellitesData[i].measured_pseudorange = compute_pseudorange(solver->satellitesData[i].satellite, &true_receiver);
+        satellites[i].error_model.noise_sigma_m *= noise_sigma_ratio;
+        satellites[i].error_model.bias_m *= bias_ratio;
     }
 
-    gnss_solver_iterate(solver, 100, true);
+    GnssSolver *solver;
+    solver = gnss_solver_create(satellite_count);
+    gnss_solver_initialize(solver, satellites, satellite_count);
+
+    gnss_simulated_evaluate_measurement(&simulated_receiver, solver);
+
+    gnss_solver_solve(solver, 100, 1e-7, true);
 
     gnss_solver_free(solver);
 }

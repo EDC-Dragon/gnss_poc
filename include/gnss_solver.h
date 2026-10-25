@@ -54,6 +54,6 @@ void gnss_solver_apply_system_correction(GnssSolver *solver);
 
 void gnss_solver_print_estimated_receiver(GnssSolver *solver);
 
-void gnss_solver_iterate(GnssSolver *solver, int max_iterations, bool verbose);
+void gnss_solver_solve(GnssSolver *solver, int max_iterations, double convergence_threshold, bool verbose);
 
 void gnss_solver_free(GnssSolver *solver);

@@ -23,7 +23,14 @@ typedef struct
 
 typedef struct
 {
+    double bias_m;
+    double noise_sigma_m;
+} SatelliteErrorModel;
+
+typedef struct
+{
     Vec3 position;
+    SatelliteErrorModel error_model;
 } Satellite;
 
 typedef enum
@@ -37,6 +44,7 @@ typedef struct
 {
     GnssStatus status;
     double pseudorange;
+    double sigma_m;
 } GnssResult;
 
 GnssResult compute_pseudorange(

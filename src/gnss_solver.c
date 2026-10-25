@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "physical_types.h"
 
@@ -59,7 +60,6 @@ void gnss_solver_update(GnssSolver *solver)
             double residue = compute_residue(solver->satellitesData[i].measured_pseudorange.pseudorange, solver->satellitesData[i].predicted_pseudorange);
 
             Vec3 satellite_to_estimated_receiver = vec3_subtract(&solver->estimated_receiver.position, &solver->satellitesData[i].satellite->position);
-            double distance = vec3_length(&satellite_to_estimated_receiver);
             vec3_normalize(&satellite_to_estimated_receiver);
             solver->satellitesData[i].observation.jacobian[0] = satellite_to_estimated_receiver.x;
             solver->satellitesData[i].observation.jacobian[1] = satellite_to_estimated_receiver.y;
@@ -75,11 +75,15 @@ void gnss_solver_build_system(GnssSolver *solver)
     solver->system = (GnssSystem){0};
     for (size_t sat = 0; sat < solver->satellite_count; sat++)
     {
+        double sigma_m = solver->satellitesData[sat].measured_pseudorange.sigma_m;
+        double weight = 0.0;
+        if (isfinite(sigma_m) && sigma_m > 0.0)
+            weight = 1.0 / (sigma_m * sigma_m);
         for (size_t i = 0; i < 4; i++)
             for (size_t j = 0; j < 4; j++)
-                solver->system.A[i][j] += solver->satellitesData[sat].observation.jacobian[i] * solver->satellitesData[sat].observation.jacobian[j];
+                solver->system.A[i][j] += weight * solver->satellitesData[sat].observation.jacobian[i] * solver->satellitesData[sat].observation.jacobian[j];
         for (size_t i = 0; i < 4; i++)
-            solver->system.B[i] += solver->satellitesData[sat].observation.jacobian[i] * solver->satellitesData[sat].observation.residue;
+            solver->system.B[i] += weight * solver->satellitesData[sat].observation.jacobian[i] * solver->satellitesData[sat].observation.residue;
     }
 }
 
@@ -165,7 +169,7 @@ void gnss_solver_apply_system_correction(GnssSolver *solver)
     solver->estimated_receiver.clock_bias_m += solver->system.state_correction[3];
 }
 
-void gnss_solver_iterate(GnssSolver *solver, int max_iterations, bool verbose)
+void gnss_solver_solve(GnssSolver *solver, int max_iterations, double convergence_threshold, bool verbose)
 {
     for (int i = 0; i < max_iterations; i++)
     {
@@ -186,7 +190,7 @@ void gnss_solver_iterate(GnssSolver *solver, int max_iterations, bool verbose)
         {
             sum += fabs(solver->system.state_correction[a]);
         }
-        if (sum < 1e-12)
+        if (sum < convergence_threshold)
         {
             break;
         }
