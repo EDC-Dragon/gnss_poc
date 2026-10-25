@@ -30,7 +30,7 @@ void gnss_solver_initialize(GnssSolver *solver, Satellite *satellites, size_t sa
     {
         solver->satellitesData[i].satellite = &satellites[i];
         solver->satellitesData[i].predicted_pseudorange = NAN;
-        solver->satellitesData[i].measured_pseudorange = (GnssResult){.status = GNSS_NUMERICAL_ERROR, .pseudorange = NAN};
+        solver->satellitesData[i].measured_pseudorange = (GnssMeasurement){.status = GNSS_NUMERICAL_ERROR, .pseudorange = NAN};
         solver->satellitesData[i].observation = (GnssObservation){.jacobian = {0.0, 0.0, 0.0}, .residue = NAN};
     }
 }
@@ -46,7 +46,7 @@ void gnss_solver_update(GnssSolver *solver)
     for (size_t i = 0; i < solver->satellite_count; i++)
     {
         solver->satellitesData[i].satellite = solver->satellitesData[i].satellite;
-        GnssResult result = compute_pseudorange(solver->satellitesData[i].satellite, &solver->estimated_receiver);
+        GnssEstimatedMeasurement result = compute_pseudorange(solver->satellitesData[i].satellite, &solver->estimated_receiver);
         if (result.status == GNSS_OK)
             solver->satellitesData[i].predicted_pseudorange = result.pseudorange;
         else

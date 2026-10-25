@@ -10,4 +10,4 @@ typedef struct
 
 void gnss_simulated_receiver_init(GnssSimulatedReceiver *receiver, Receiver true_receiver);
 
-void gnss_simulated_evaluate_measurement(GnssSimulatedReceiver *simulated_receiver, GnssSolver *solver);
+void gnss_simulated_evaluate_measurement(GnssSimulatedReceiver *simulated_receiver, double time_s, GnssSolver *solver);

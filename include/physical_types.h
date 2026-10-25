@@ -30,6 +30,7 @@ typedef struct
 typedef struct
 {
     Vec3 position;
+    double time_s;
     SatelliteErrorModel error_model;
 } Satellite;
 
@@ -45,17 +46,24 @@ typedef struct
     GnssStatus status;
     double pseudorange;
     double sigma_m;
-} GnssResult;
+    double transmission_time_s;
+    double arrival_time_s;
+} GnssMeasurement;
 
-GnssResult compute_pseudorange(
+GnssMeasurement simulate_pseudorange_measurement(
+    const Satellite *sat,
+    const Receiver *true_receiver,
+    double arrival_time_s);
+
+typedef struct
+{
+    GnssStatus status;
+    double pseudorange;
+} GnssEstimatedMeasurement;
+
+GnssEstimatedMeasurement compute_pseudorange(
     const Satellite *sat,
     const Receiver *receiver);
-
-void compute_pseudoranges(
-    const Satellite *satellites,
-    size_t satellite_count,
-    const Receiver *receiver,
-    GnssResult *results);
 
 double compute_residue(
     double measured_pseudorange,

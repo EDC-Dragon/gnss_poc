@@ -4,6 +4,8 @@
 #include <string.h>
 #include <math.h>
 
+#include "gnss_math.h"
+
 Vec3 vec3_subtract(const Vec3 *a, const Vec3 *b)
 {
     Vec3 result;
@@ -35,38 +37,45 @@ void vec3_normalize(Vec3 *v)
     }
 }
 
-GnssResult compute_pseudorange(
+GnssMeasurement simulate_pseudorange_measurement(
+    const Satellite *sat,
+    const Receiver *true_receiver,
+    double arrival_time_s)
+{
+    if (!sat || !true_receiver)
+        return (GnssMeasurement){.status = GNSS_INVALID_ARGUMENT};
+
+    double distance = vec3_distance(&sat->position, &true_receiver->position);
+
+    double pseudorange = distance + true_receiver->clock_bias_m;
+
+    if (!isfinite(pseudorange))
+        return (GnssMeasurement){.status = GNSS_NUMERICAL_ERROR};
+
+    double noise = sat->error_model.bias_m + gaussian_noise(sat->error_model.noise_sigma_m);
+    double pseudorange_with_noise = pseudorange + noise;
+    double sigma_m = sat->error_model.noise_sigma_m;
+
+    double transmission_time_s = sat->time_s - distance / C_MS;
+
+    return (GnssMeasurement){.status = GNSS_OK, .pseudorange = pseudorange_with_noise, .sigma_m = sigma_m, .transmission_time_s = transmission_time_s, .arrival_time_s = arrival_time_s};
+}
+
+GnssEstimatedMeasurement compute_pseudorange(
     const Satellite *sat,
     const Receiver *receiver)
 {
     if (!sat || !receiver)
-        return (GnssResult){.status = GNSS_INVALID_ARGUMENT};
+        return (GnssEstimatedMeasurement){.status = GNSS_INVALID_ARGUMENT};
 
     double distance = vec3_distance(&sat->position, &receiver->position);
 
     double evaluated_pseudorange = distance + receiver->clock_bias_m;
 
     if (!isfinite(evaluated_pseudorange))
-        return (GnssResult){.status = GNSS_NUMERICAL_ERROR};
+        return (GnssEstimatedMeasurement){.status = GNSS_NUMERICAL_ERROR};
 
-    return (GnssResult){.status = GNSS_OK, .pseudorange = evaluated_pseudorange};
-}
-
-void compute_pseudoranges(
-    const Satellite *satellites,
-    size_t satellite_count,
-    const Receiver *receiver,
-    GnssResult *results)
-{
-    if (!satellites || !receiver || !results || satellite_count <= 0)
-        return;
-
-    for (size_t satellite_index = 0; satellite_index < satellite_count; satellite_index++)
-    {
-        const Satellite *satellite = satellites + satellite_index;
-        GnssResult *result = results + satellite_index;
-        *result = compute_pseudorange(satellite, receiver);
-    }
+    return (GnssEstimatedMeasurement){.status = GNSS_OK, .pseudorange = evaluated_pseudorange};
 }
 
 double compute_residue(
