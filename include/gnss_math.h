@@ -8,7 +8,7 @@ double gaussian_noise(double sigma);
 
 GnssEstimatedMeasurement compute_pseudorange(
     const Satellite *sat,
-    const Receiver *receiver);
+    const GnssReceiverState *receiver);
 
 double compute_residue(
     double measured_pseudorange,

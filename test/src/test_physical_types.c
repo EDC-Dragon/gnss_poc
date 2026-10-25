@@ -13,7 +13,7 @@
 typedef struct PseudoRangeTestCase
 {
     Satellite sat;
-    Receiver receiver;
+    GnssReceiverState receiver;
     GnssEstimatedMeasurement expected_result;
     bool should_pass;
 } PseudoRangeTestCase;
@@ -21,7 +21,7 @@ typedef struct PseudoRangeTestCase
 typedef struct MultiPseudoRangeTestCase
 {
     Satellite *satellites;
-    Receiver receiver;
+    GnssReceiverState receiver;
     GnssEstimatedMeasurement *expected_results;
     bool should_pass;
 } MultiPseudoRangeTestCase;
@@ -45,7 +45,7 @@ void run_pseudorange_tests()
         {.position = {20000000.0, 0.0, 0.0}},
         {.position = {100.0, 200.0, 300.0}}};
 
-    Receiver receivers[] = {
+    GnssReceiverState receivers[] = {
         {.position = {0.0, 0.0, 0.0}, .clock_bias_m = 0.0},
         {.position = {0.0, 0.0, 0.0}, .clock_bias_m = 0.0},
         {.position = {0.0, 0.0, 0.0}, .clock_bias_m = -50.0},
@@ -109,7 +109,7 @@ void run_pseudorange_tests()
 void run_basic_gnss_test()
 {
     GnssSimulatedReceiver simulated_receiver;
-    Receiver true_receiver = {
+    GnssReceiverState true_receiver = {
         .position = {4200000.0, 170000.0, 4780000.0},
         .clock_bias_m = 150.0};
     gnss_simulated_receiver_init(&simulated_receiver, true_receiver);
@@ -131,19 +131,14 @@ void run_basic_gnss_test()
         satellites[i].error_model.bias_m *= bias_ratio;
     }
 
-    GnssSolver *solver;
-    solver = gnss_solver_create(satellite_count);
-    gnss_solver_initialize(solver, satellites, satellite_count);
+    GnssReceiver *receiver = gnss_receiver_create(satellite_count);
+    gnss_receiver_initialize(receiver);
 
     double time_s = 0.0;
+    gnss_simulated_evaluate_measurement(&simulated_receiver, satellites, satellite_count, time_s, receiver);
+    gnss_receiver_update(receiver);
 
-    gnss_simulated_evaluate_measurement(&simulated_receiver, time_s, solver);
-
-    gnss_solver_solve(solver, 100, 1e-7, false);
-
-    gnss_solver_print_estimated_receiver(solver);
-
-    gnss_solver_free(solver);
+    gnss_receiver_free(receiver);
 }
 
 /*

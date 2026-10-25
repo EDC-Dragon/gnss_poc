@@ -11,7 +11,7 @@
 
 GnssMeasurement simulate_pseudorange_measurement(
     const Satellite *sat,
-    const Receiver *true_receiver,
+    const GnssReceiverState *true_receiver,
     double arrival_time_s)
 {
     if (!sat || !true_receiver)
@@ -33,20 +33,20 @@ GnssMeasurement simulate_pseudorange_measurement(
     return (GnssMeasurement){.status = GNSS_OK, .pseudorange = pseudorange_with_noise, .sigma_m = sigma_m, .transmission_time_s = transmission_time_s, .arrival_time_s = arrival_time_s};
 }
 
-void gnss_simulated_receiver_init(GnssSimulatedReceiver *receiver, Receiver true_receiver)
+void gnss_simulated_receiver_init(GnssSimulatedReceiver *receiver, GnssReceiverState true_receiver)
 {
     receiver->true_receiver = true_receiver;
 }
 
-void gnss_simulated_evaluate_measurement(GnssSimulatedReceiver *simulated_receiver, double arrival_time_s, GnssSolver *solver)
+void gnss_simulated_evaluate_measurement(GnssSimulatedReceiver *simulated_receiver, Satellite *satellites, size_t satellite_count, double arrival_time_s, GnssReceiver *receiver)
 {
-    for (size_t i = 0; i < solver->satellite_count; i++)
+    for (size_t i = 0; i < satellite_count; i++)
     {
-        Satellite *sat = solver->satellitesData[i].satellite;
+        Satellite *sat = &satellites[i];
         sat->time_s = arrival_time_s;
 
-        GnssMeasurement measured_pseudorange = simulate_pseudorange_measurement(sat, &simulated_receiver->true_receiver, arrival_time_s);
+        GnssMeasurement measurement = simulate_pseudorange_measurement(sat, &simulated_receiver->true_receiver, arrival_time_s);
 
-        solver->satellitesData[i].measured_pseudorange = measured_pseudorange;
+        gnss_receiver_update_satellite(receiver, sat, measurement);
     }
 }

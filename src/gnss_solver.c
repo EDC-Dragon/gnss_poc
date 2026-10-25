@@ -10,83 +10,72 @@
 #include "gnss_math.h"
 #include "gnss_receiver.h"
 
-GnssSolver *gnss_solver_create(size_t max_satellite_count)
+GnssSolver *gnss_solver_create()
 {
     GnssSolver *solver = malloc(sizeof(GnssSolver));
-    solver->satellitesData = malloc(sizeof(GnssSatelliteData) * max_satellite_count);
     return solver;
 }
 
 void gnss_solver_free(GnssSolver *solver)
 {
-    free(solver->satellitesData);
     free(solver);
 }
 
-void gnss_solver_initialize(GnssSolver *solver, Satellite *satellites, size_t satellite_count)
+void gnss_solver_initialize(GnssSolver *solver)
 {
-    solver->satellite_count = satellite_count;
-    solver->estimated_receiver = (Receiver){
+    solver->estimated_receiver = (GnssReceiverState){
         .position = {0.0, 0.0, 0.0},
         .clock_bias_m = 0.0};
-    for (size_t i = 0; i < satellite_count; i++)
-    {
-        solver->satellitesData[i].satellite = &satellites[i];
-        solver->satellitesData[i].predicted_pseudorange = NAN;
-        solver->satellitesData[i].measured_pseudorange = (GnssMeasurement){.status = GNSS_NUMERICAL_ERROR, .pseudorange = NAN};
-        solver->satellitesData[i].observation = (GnssObservation){.jacobian = {0.0, 0.0, 0.0}, .residue = NAN};
-    }
 }
 
 void gnss_solver_print_estimated_receiver(GnssSolver *solver)
 {
-    printf("Estimated Receiver Position: (%f, %f, %f)\n", solver->estimated_receiver.position.x, solver->estimated_receiver.position.y, solver->estimated_receiver.position.z);
-    printf("Estimated Receiver Clock Bias: %f\n", solver->estimated_receiver.clock_bias_m);
+    printf("Estimated GnssReceiverState Position: (%f, %f, %f)\n", solver->estimated_receiver.position.x, solver->estimated_receiver.position.y, solver->estimated_receiver.position.z);
+    printf("Estimated GnssReceiverState Clock Bias: %f\n", solver->estimated_receiver.clock_bias_m);
 }
 
-void gnss_solver_update(GnssSolver *solver)
+void gnss_solver_update(GnssSolver *solver, GnssSatelliteData *satellitesData, size_t satellite_count)
 {
-    for (size_t i = 0; i < solver->satellite_count; i++)
+    for (size_t i = 0; i < satellite_count; i++)
     {
-        solver->satellitesData[i].satellite = solver->satellitesData[i].satellite;
-        GnssEstimatedMeasurement result = compute_pseudorange(solver->satellitesData[i].satellite, &solver->estimated_receiver);
+        GnssEstimatedMeasurement result = compute_pseudorange(satellitesData[i].satellite, &solver->estimated_receiver);
         if (result.status == GNSS_OK)
-            solver->satellitesData[i].predicted_pseudorange = result.pseudorange;
+            satellitesData[i].predicted_pseudorange = result.pseudorange;
         else
-            solver->satellitesData[i].predicted_pseudorange = NAN;
+            satellitesData[i].predicted_pseudorange = NAN;
     }
 
-    for (size_t i = 0; i < solver->satellite_count; i++)
+    for (size_t i = 0; i < satellite_count; i++)
     {
-        if (solver->satellitesData[i].measured_pseudorange.status == GNSS_OK)
+        if (satellitesData[i].measured_pseudorange.status == GNSS_OK)
         {
-            double residue = compute_residue(solver->satellitesData[i].measured_pseudorange.pseudorange, solver->satellitesData[i].predicted_pseudorange);
+            double residue = compute_residue(satellitesData[i].measured_pseudorange.pseudorange, satellitesData[i].predicted_pseudorange);
 
-            Vec3 satellite_to_estimated_receiver = vec3_subtract(&solver->estimated_receiver.position, &solver->satellitesData[i].satellite->position);
+            Vec3 satellite_to_estimated_receiver = vec3_subtract(&solver->estimated_receiver.position, &satellitesData[i].satellite->position);
             vec3_normalize(&satellite_to_estimated_receiver);
-            solver->satellitesData[i].observation.jacobian[0] = satellite_to_estimated_receiver.x;
-            solver->satellitesData[i].observation.jacobian[1] = satellite_to_estimated_receiver.y;
-            solver->satellitesData[i].observation.jacobian[2] = satellite_to_estimated_receiver.z;
-            solver->satellitesData[i].observation.jacobian[3] = 1.0;
-            solver->satellitesData[i].observation.residue = residue;
+            satellitesData[i].observation.jacobian[0] = satellite_to_estimated_receiver.x;
+            satellitesData[i].observation.jacobian[1] = satellite_to_estimated_receiver.y;
+            satellitesData[i].observation.jacobian[2] = satellite_to_estimated_receiver.z;
+            satellitesData[i].observation.jacobian[3] = 1.0;
+            satellitesData[i].observation.residue = residue;
         }
     }
 }
 
-void gnss_solver_build_system(GnssSolver *solver)
+void gnss_solver_build_system(GnssSolver *solver, GnssSatelliteData *satellitesData, size_t satellite_count)
 {
     solver->system = (GnssSystem){0};
-    for (size_t sat = 0; sat < solver->satellite_count; sat++)
+    for (size_t sat = 0; sat < satellite_count; sat++)
     {
-        double sigma_m = solver->satellitesData[sat].measured_pseudorange.sigma_m;
+        double sigma_m = satellitesData[sat].measured_pseudorange.sigma_m;
         double weight = 0.0;
         if (isfinite(sigma_m) && sigma_m > 0.0)
             weight = 1.0 / (sigma_m * sigma_m);
         for (size_t i = 0; i < 4; i++)
             for (size_t j = 0; j < 4; j++)
-                solver->system.A[i][j] += weight * solver->satellitesData[sat].observation.jacobian[i] * solver->satellitesData[sat].observation.jacobian[j];
+                solver->system.A[i][j] += weight * satellitesData[sat].observation.jacobian[i] * satellitesData[sat].observation.jacobian[j];
         for (size_t i = 0; i < 4; i++)
-            solver->system.B[i] += weight * solver->satellitesData[sat].observation.jacobian[i] * solver->satellitesData[sat].observation.residue;
+            solver->system.B[i] += weight * satellitesData[sat].observation.jacobian[i] * satellitesData[sat].observation.residue;
     }
 }
 
@@ -172,7 +161,7 @@ void gnss_solver_apply_system_correction(GnssSolver *solver)
     solver->estimated_receiver.clock_bias_m += solver->system.state_correction[3];
 }
 
-void gnss_solver_solve(GnssSolver *solver, int max_iterations, double convergence_threshold, bool verbose)
+void gnss_solver_solve(GnssSolver *solver, int max_iterations, double convergence_threshold, GnssSatelliteData *satellitesData, size_t satellite_count, bool verbose)
 {
     for (int i = 0; i < max_iterations; i++)
     {
@@ -180,8 +169,8 @@ void gnss_solver_solve(GnssSolver *solver, int max_iterations, double convergenc
         {
             printf("Iteration %d\n", i);
         }
-        gnss_solver_update(solver);
-        gnss_solver_build_system(solver);
+        gnss_solver_update(solver, satellitesData, satellite_count);
+        gnss_solver_build_system(solver, satellitesData, satellite_count);
         gnss_solver_solve_system(solver);
         gnss_solver_apply_system_correction(solver);
         if (verbose)

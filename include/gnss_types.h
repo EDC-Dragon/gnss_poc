@@ -37,3 +37,9 @@ typedef struct
     GnssStatus status;
     double pseudorange;
 } GnssEstimatedMeasurement;
+
+typedef struct
+{
+    Vec3 position;
+    double clock_bias_m;
+} GnssReceiverState;

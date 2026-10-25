@@ -5,7 +5,6 @@
 
 #include "gnss_types.h"
 #include "gnss_satellite.h"
-#include "gnss_receiver.h"
 
 typedef struct
 {
@@ -18,6 +17,7 @@ typedef struct
     Satellite *satellite;
 
     GnssMeasurement measured_pseudorange;
+
     double predicted_pseudorange;
 
     GnssObservation observation;
@@ -32,24 +32,21 @@ typedef struct
 
 typedef struct
 {
-    GnssSatelliteData *satellitesData;
-    size_t satellite_count;
-
     GnssSystem system;
 
-    Receiver estimated_receiver;
+    GnssReceiverState estimated_receiver;
 } GnssSolver;
 
-GnssSolver *gnss_solver_create(size_t max_satellite_count);
+GnssSolver *gnss_solver_create();
 
 // Initialize the GNSS solver with the given satellites and satellite count.
-void gnss_solver_initialize(GnssSolver *solver, Satellite *satellites, size_t satellite_count);
+void gnss_solver_initialize(GnssSolver *solver);
 
 // Update the GNSS solver with the latest measurements and predictions.
-void gnss_solver_update(GnssSolver *solver);
+void gnss_solver_update(GnssSolver *solver, GnssSatelliteData *satellitesData, size_t satellite_count);
 
 // Build the system of equations for the GNSS solver.
-void gnss_solver_build_system(GnssSolver *solver);
+void gnss_solver_build_system(GnssSolver *solver, GnssSatelliteData *satellitesData, size_t satellite_count);
 
 // Print the current system of equations for the GNSS solver.
 void gnss_solver_print_system(GnssSolver *solver);
@@ -64,7 +61,7 @@ void gnss_solver_apply_system_correction(GnssSolver *solver);
 void gnss_solver_print_estimated_receiver(GnssSolver *solver);
 
 // Solve the GNSS system iteratively until convergence or the maximum number of iterations is reached.
-void gnss_solver_solve(GnssSolver *solver, int max_iterations, double convergence_threshold, bool verbose);
+void gnss_solver_solve(GnssSolver *solver, int max_iterations, double convergence_threshold, GnssSatelliteData *satellitesData, size_t satellite_count, bool verbose);
 
 // Free the resources allocated for the GNSS solver.
 void gnss_solver_free(GnssSolver *solver);
