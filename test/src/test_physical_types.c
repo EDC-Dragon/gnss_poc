@@ -109,10 +109,10 @@ void run_pseudorange_tests()
 void run_basic_gnss_test()
 {
     GnssSimulatedReceiver simulated_receiver;
-    GnssReceiverState true_receiver = {
-        .position = {4200000.0, 170000.0, 4780000.0},
-        .clock_bias_m = 150.0};
-    gnss_simulated_receiver_init(&simulated_receiver, true_receiver);
+    Vec3 initial_position = {4200000.0, 170000.0, 4780000.0};
+    double initial_clock_bias_m = 150.0;
+    Vec3 initial_velocity = {100.0, 100.0, 100.0};
+    gnss_simulated_receiver_init(&simulated_receiver, initial_position, initial_clock_bias_m, initial_velocity);
 
     double noise_sigma_ratio = 1.0;
     double bias_ratio = 1.0;
@@ -135,8 +135,6 @@ void run_basic_gnss_test()
     gnss_receiver_initialize(receiver);
 
     double time_s = 0.0;
-    gnss_simulated_evaluate_measurement(&simulated_receiver, satellites, satellite_count, time_s, receiver);
-    gnss_receiver_update(receiver, time_s);
     gnss_simulated_evaluate_measurement(&simulated_receiver, satellites, satellite_count, time_s, receiver);
     gnss_receiver_update(receiver, time_s);
     time_s += 1.0;

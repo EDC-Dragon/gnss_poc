@@ -33,13 +33,25 @@ GnssMeasurement simulate_pseudorange_measurement(
     return (GnssMeasurement){.status = GNSS_OK, .pseudorange = pseudorange_with_noise, .sigma_m = sigma_m, .transmission_time_s = transmission_time_s, .arrival_time_s = arrival_time_s};
 }
 
-void gnss_simulated_receiver_init(GnssSimulatedReceiver *receiver, GnssReceiverState true_receiver)
+void gnss_simulated_receiver_init(GnssSimulatedReceiver *receiver, Vec3 initial_position, double initial_clock_bias_m, Vec3 initial_velocity)
 {
-    receiver->true_receiver = true_receiver;
+    receiver->true_receiver.position = initial_position;
+    receiver->true_receiver.time_s = 0.0;
+    receiver->true_receiver.clock_bias_m = initial_clock_bias_m;
+    receiver->velocity = initial_velocity;
 }
 
 void gnss_simulated_evaluate_measurement(GnssSimulatedReceiver *simulated_receiver, Satellite *satellites, size_t satellite_count, double arrival_time_s, GnssReceiver *receiver)
 {
+    double dt = arrival_time_s - simulated_receiver->true_receiver.time_s;
+    if (dt < 0.0)
+        return;
+    simulated_receiver->true_receiver.position.x += simulated_receiver->velocity.x * dt;
+    simulated_receiver->true_receiver.position.y += simulated_receiver->velocity.y * dt;
+    simulated_receiver->true_receiver.position.z += simulated_receiver->velocity.z * dt;
+    simulated_receiver->true_receiver.time_s = arrival_time_s;
+    simulated_receiver->true_receiver.clock_bias_m += 0.0; // Update clock bias if needed
+
     for (size_t i = 0; i < satellite_count; i++)
     {
         Satellite *sat = &satellites[i];

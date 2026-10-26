@@ -40,6 +40,7 @@ typedef struct
 
 typedef struct
 {
+    double time_s;
     Vec3 position;
     double clock_bias_m;
 } GnssReceiverState;
