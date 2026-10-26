@@ -118,12 +118,12 @@ void run_basic_gnss_test()
     double bias_ratio = 1.0;
 
     Satellite satellites[] = {
-        {.position = {15600000.0, 7540000.0, 20140000.0}, .error_model = {.bias_m = 2.0, .noise_sigma_m = 2.0}},
-        {.position = {18760000.0, 2750000.0, 18610000.0}, .error_model = {.bias_m = 1.0, .noise_sigma_m = 5.0}},
-        {.position = {17610000.0, 14630000.0, 13480000.0}, .error_model = {.bias_m = -2.0, .noise_sigma_m = 1.0}},
-        {.position = {19170000.0, 610000.0, 18390000.0}, .error_model = {.bias_m = -3.0, .noise_sigma_m = 7.0}},
-        {.position = {17800000.0, -13400000.0, 14600000.0}, .error_model = {.bias_m = 2.0, .noise_sigma_m = 8.0}},
-        {.position = {-13400000.0, 10200000.0, 21000000.0}, .error_model = {.bias_m = 1.0, .noise_sigma_m = 2.0}}};
+        {.name = "G01", .position = {15600000.0, 7540000.0, 20140000.0}, .error_model = {.bias_m = 2.0, .noise_sigma_m = 2.0}},
+        {.name = "G02", .position = {18760000.0, 2750000.0, 18610000.0}, .error_model = {.bias_m = 1.0, .noise_sigma_m = 5.0}},
+        {.name = "G03", .position = {17610000.0, 14630000.0, 13480000.0}, .error_model = {.bias_m = -2.0, .noise_sigma_m = 1.0}},
+        {.name = "G04", .position = {19170000.0, 610000.0, 18390000.0}, .error_model = {.bias_m = -3.0, .noise_sigma_m = 7.0}},
+        {.name = "G05", .position = {17800000.0, -13400000.0, 14600000.0}, .error_model = {.bias_m = 2.0, .noise_sigma_m = 8.0}},
+        {.name = "G06", .position = {-13400000.0, 10200000.0, 21000000.0}, .error_model = {.bias_m = 1.0, .noise_sigma_m = 2.0}}};
     size_t satellite_count = sizeof(satellites) / sizeof(satellites[0]);
     for (size_t i = 0; i < satellite_count; i++)
     {
@@ -136,7 +136,7 @@ void run_basic_gnss_test()
 
     double time_s = 0.0;
     gnss_simulated_evaluate_measurement(&simulated_receiver, satellites, satellite_count, time_s, receiver);
-    gnss_receiver_update(receiver);
+    gnss_receiver_update(receiver, time_s);
 
     gnss_receiver_free(receiver);
 }

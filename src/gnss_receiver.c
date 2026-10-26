@@ -1,6 +1,7 @@
 #include "gnss_receiver.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 GnssReceiver *gnss_receiver_create(size_t max_satellite_count)
 {
@@ -29,18 +30,69 @@ void gnss_receiver_free(GnssReceiver *receiver)
     free(receiver);
 }
 
-void gnss_receiver_update_satellite(GnssReceiver *receiver, Satellite *satellite, GnssMeasurement measurement)
+typedef struct
 {
-    if (receiver->satellite_count >= receiver->max_satellite_count)
-        return;
-    receiver->satellitesData[receiver->satellite_count].satellite = satellite;
-    receiver->satellitesData[receiver->satellite_count].measured_pseudorange = measurement;
-    receiver->satellite_count++;
+    bool found;
+    size_t index;
+} GnssSatelliteSearchResult;
+
+GnssSatelliteSearchResult gnss_receiver_find_satellite(GnssReceiver *receiver, Satellite *sat)
+{
+    for (size_t i = 0; i < receiver->satellite_count; i++)
+        if (strcmp(receiver->satellitesData[i].satellite->name, sat->name) == 0)
+            return (GnssSatelliteSearchResult){true, i};
+    return (GnssSatelliteSearchResult){false, 0};
 }
 
-void gnss_receiver_update(GnssReceiver *receiver)
+void gnss_receiver_link_satellite(GnssReceiver *receiver, Satellite *satellite)
 {
+    GnssSatelliteSearchResult res = gnss_receiver_find_satellite(receiver, satellite);
+    if (!res.found && receiver->satellite_count < receiver->max_satellite_count)
+    {
+        receiver->satellitesData[receiver->satellite_count].satellite = satellite;
+        receiver->satellitesData[receiver->satellite_count].measured_pseudorange = (GnssMeasurement){.status = GNSS_INVALID_ARGUMENT};
+        receiver->satellite_count++;
+    }
+}
+
+void gnss_receiver_unlink_satellite(GnssReceiver *receiver, Satellite *satellite)
+{
+    GnssSatelliteSearchResult res = gnss_receiver_find_satellite(receiver, satellite);
+    if (res.found)
+    {
+        receiver->satellite_count--;
+        for (size_t i = res.index; i < receiver->satellite_count; i++)
+            receiver->satellitesData[i] = receiver->satellitesData[i + 1];
+    }
+}
+
+void gnss_receiver_unlink_obsolete_satellites(GnssReceiver *receiver, double time_s, double max_age_s)
+{
+    // Reverse order to avoid shifting issues
+    for (size_t i = receiver->satellite_count; i > 0; i--)
+    {
+        double age = time_s - receiver->satellitesData[i - 1].measured_pseudorange.arrival_time_s;
+        if (age > max_age_s)
+            gnss_receiver_unlink_satellite(receiver, receiver->satellitesData[i - 1].satellite);
+    }
+}
+
+void gnss_receiver_update_satellite(GnssReceiver *receiver, Satellite *satellite, GnssMeasurement measurement)
+{
+    GnssSatelliteSearchResult res = gnss_receiver_find_satellite(receiver, satellite);
+    if (!res.found)
+    {
+        printf("Satellite %s not found, linking it\n", satellite->name);
+        gnss_receiver_link_satellite(receiver, satellite);
+    }
+    res = gnss_receiver_find_satellite(receiver, satellite);
+    if (res.found)
+        receiver->satellitesData[res.index].measured_pseudorange = measurement;
+}
+
+void gnss_receiver_update(GnssReceiver *receiver, double time_s)
+{
+    gnss_receiver_unlink_obsolete_satellites(receiver, time_s, 10);
     gnss_solver_solve(receiver->solver, 100, 10e-7, receiver->satellitesData, receiver->satellite_count, false);
     gnss_solver_print_estimated_receiver(receiver->solver);
-    receiver->satellite_count = 0;
 }

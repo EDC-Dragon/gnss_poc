@@ -19,8 +19,12 @@ GnssReceiver *gnss_receiver_create(size_t max_satellite_count);
 
 void gnss_receiver_initialize(GnssReceiver *receiver);
 
+void gnss_receiver_link_satellite(GnssReceiver *receiver, Satellite *satellite);
+
+void gnss_receiver_unlink_satellite(GnssReceiver *receiver, Satellite *satellite);
+
 void gnss_receiver_update_satellite(GnssReceiver *receiver, Satellite *satellite, GnssMeasurement measurement);
 
-void gnss_receiver_update(GnssReceiver *receiver);
+void gnss_receiver_update(GnssReceiver *receiver, double time);
 
 void gnss_receiver_free(GnssReceiver *receiver);

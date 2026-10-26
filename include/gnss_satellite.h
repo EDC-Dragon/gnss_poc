@@ -1,6 +1,9 @@
 #pragma once
 
 #include "gnss_types.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdbool.h>
 
 typedef struct
 {
@@ -10,6 +13,7 @@ typedef struct
 
 typedef struct
 {
+    char name[16];
     Vec3 position;
     double time_s;
     SatelliteErrorModel error_model;
