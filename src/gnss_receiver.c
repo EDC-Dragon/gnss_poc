@@ -101,7 +101,7 @@ void gnss_receiver_update(GnssReceiver *receiver, double time_s)
 
     for (size_t i = 0; i < receiver->satellite_count; i++)
     {
-        if (receiver->satellitesData[i].measured_pseudorange.status == GNSS_INVALID_ARGUMENT)
+        if (receiver->satellitesData[i].measured_pseudorange.status != GNSS_OK)
             continue;
         double data_age_s = time_s - receiver->satellitesData[i].measured_pseudorange.arrival_time_s;
         if (obsolescence_age_s < data_age_s)
@@ -117,5 +117,6 @@ void gnss_receiver_update(GnssReceiver *receiver, double time_s)
     }
 
     gnss_solver_solve(receiver->solver, 100, 10e-7, valid_satellite_data, valid_satellite_count, false);
+
     gnss_solver_print_estimated_receiver(receiver->solver);
 }

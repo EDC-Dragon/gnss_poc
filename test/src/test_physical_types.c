@@ -137,6 +137,17 @@ void run_basic_gnss_test()
     double time_s = 0.0;
     gnss_simulated_evaluate_measurement(&simulated_receiver, satellites, satellite_count, time_s, receiver);
     gnss_receiver_update(receiver, time_s);
+    gnss_simulated_evaluate_measurement(&simulated_receiver, satellites, satellite_count, time_s, receiver);
+    gnss_receiver_update(receiver, time_s);
+    time_s += 1.0;
+    gnss_simulated_evaluate_measurement(&simulated_receiver, satellites, satellite_count, time_s, receiver);
+    gnss_receiver_update(receiver, time_s);
+    time_s += 2.0;
+    gnss_simulated_evaluate_measurement(&simulated_receiver, satellites, satellite_count, time_s, receiver);
+    gnss_receiver_update(receiver, time_s);
+    time_s += 3.0;
+    gnss_simulated_evaluate_measurement(&simulated_receiver, satellites, satellite_count, time_s, receiver);
+    gnss_receiver_update(receiver, time_s);
 
     gnss_receiver_free(receiver);
 }

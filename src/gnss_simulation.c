@@ -24,7 +24,7 @@ GnssMeasurement simulate_pseudorange_measurement(
     if (!isfinite(pseudorange))
         return (GnssMeasurement){.status = GNSS_NUMERICAL_ERROR};
 
-    double noise = sat->error_model.bias_m + gaussian_noise(sat->error_model.noise_sigma_m);
+    double noise = sat->error_model.bias_m + gaussian_noise_at_time(sat->name, arrival_time_s, sat->error_model.noise_sigma_m);
     double pseudorange_with_noise = pseudorange + noise;
     double sigma_m = sat->error_model.noise_sigma_m;
 
