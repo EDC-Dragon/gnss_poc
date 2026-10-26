@@ -66,13 +66,13 @@ void gnss_receiver_unlink_satellite(GnssReceiver *receiver, Satellite *satellite
     }
 }
 
-void gnss_receiver_unlink_obsolete_satellites(GnssReceiver *receiver, double time_s, double max_age_s)
+void gnss_receiver_unlink_obsolete_satellites(GnssReceiver *receiver, double time_s, double satellite_obsolescence_age_s)
 {
     // Reverse order to avoid shifting issues
     for (size_t i = receiver->satellite_count; i > 0; i--)
     {
         double age = time_s - receiver->satellitesData[i - 1].measured_pseudorange.arrival_time_s;
-        if (age > max_age_s)
+        if (age > satellite_obsolescence_age_s)
             gnss_receiver_unlink_satellite(receiver, receiver->satellitesData[i - 1].satellite);
     }
 }
@@ -92,7 +92,30 @@ void gnss_receiver_update_satellite(GnssReceiver *receiver, Satellite *satellite
 
 void gnss_receiver_update(GnssReceiver *receiver, double time_s)
 {
-    gnss_receiver_unlink_obsolete_satellites(receiver, time_s, 10);
-    gnss_solver_solve(receiver->solver, 100, 10e-7, receiver->satellitesData, receiver->satellite_count, false);
+    double satellite_obsolescence_age_s = 10.0;
+    gnss_receiver_unlink_obsolete_satellites(receiver, time_s, satellite_obsolescence_age_s);
+
+    double obsolescence_age_s = 0.2;
+    GnssSatelliteData valid_satellite_data[receiver->satellite_count];
+    size_t valid_satellite_count = 0;
+
+    for (size_t i = 0; i < receiver->satellite_count; i++)
+    {
+        if (receiver->satellitesData[i].measured_pseudorange.status == GNSS_INVALID_ARGUMENT)
+            continue;
+        double data_age_s = time_s - receiver->satellitesData[i].measured_pseudorange.arrival_time_s;
+        if (obsolescence_age_s < data_age_s)
+            continue;
+        valid_satellite_data[valid_satellite_count] = receiver->satellitesData[i];
+        valid_satellite_count++;
+    }
+
+    if (valid_satellite_count < 4)
+    {
+        printf("Not enough valid satellites\n");
+        return;
+    }
+
+    gnss_solver_solve(receiver->solver, 100, 10e-7, valid_satellite_data, valid_satellite_count, false);
     gnss_solver_print_estimated_receiver(receiver->solver);
 }
