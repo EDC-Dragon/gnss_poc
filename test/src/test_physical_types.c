@@ -79,7 +79,7 @@ void run_pseudorange_tests()
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++)
     {
         PseudoRangeTestCase test = tests[i];
-        GnssEstimatedMeasurement gnssResult = compute_pseudorange(&test.sat, &test.receiver);
+        GnssEstimatedMeasurement gnssResult = compute_pseudorange(test.sat.position, &test.receiver);
         bool result = compare_gnss_results(gnssResult, test.expected_result);
         if (result == test.should_pass)
         {
@@ -118,12 +118,12 @@ void run_basic_gnss_test()
     double bias_ratio = 1.0;
 
     Satellite satellites[] = {
-        {.name = "G01", .position = {15600000.0, 7540000.0, 20140000.0}, .error_model = {.bias_m = 2.0, .noise_sigma_m = 2.0}},
-        {.name = "G02", .position = {18760000.0, 2750000.0, 18610000.0}, .error_model = {.bias_m = 1.0, .noise_sigma_m = 5.0}},
-        {.name = "G03", .position = {17610000.0, 14630000.0, 13480000.0}, .error_model = {.bias_m = -2.0, .noise_sigma_m = 1.0}},
-        {.name = "G04", .position = {19170000.0, 610000.0, 18390000.0}, .error_model = {.bias_m = -3.0, .noise_sigma_m = 7.0}},
-        {.name = "G05", .position = {17800000.0, -13400000.0, 14600000.0}, .error_model = {.bias_m = 2.0, .noise_sigma_m = 8.0}},
-        {.name = "G06", .position = {-13400000.0, 10200000.0, 21000000.0}, .error_model = {.bias_m = 1.0, .noise_sigma_m = 2.0}}};
+        {.id = 1, .position = {15600000.0, 7540000.0, 20140000.0}, .error_model = {.bias_m = 2.0, .noise_sigma_m = 2.0}},
+        {.id = 2, .position = {18760000.0, 2750000.0, 18610000.0}, .error_model = {.bias_m = 1.0, .noise_sigma_m = 5.0}},
+        {.id = 3, .position = {17610000.0, 14630000.0, 13480000.0}, .error_model = {.bias_m = -2.0, .noise_sigma_m = 1.0}},
+        {.id = 4, .position = {19170000.0, 610000.0, 18390000.0}, .error_model = {.bias_m = -3.0, .noise_sigma_m = 7.0}},
+        {.id = 5, .position = {17800000.0, -13400000.0, 14600000.0}, .error_model = {.bias_m = 2.0, .noise_sigma_m = 8.0}},
+        {.id = 6, .position = {-13400000.0, 10200000.0, 21000000.0}, .error_model = {.bias_m = 1.0, .noise_sigma_m = 2.0}}};
     size_t satellite_count = sizeof(satellites) / sizeof(satellites[0]);
     for (size_t i = 0; i < satellite_count; i++)
     {

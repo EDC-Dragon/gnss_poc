@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdint.h>
 
 #define C_MS 299792458.0
 
@@ -16,6 +17,8 @@ double vec3_length(const Vec3 *v);
 void vec3_normalize(Vec3 *v);
 double vec3_distance(const Vec3 *a, const Vec3 *b);
 
+typedef uint64_t SatelliteId;
+
 typedef enum
 {
     GNSS_OK,
@@ -26,8 +29,13 @@ typedef enum
 typedef struct
 {
     GnssStatus status;
+
     double pseudorange;
     double sigma_m;
+
+    SatelliteId satellite_id;
+    Vec3 satellite_position;
+
     double transmission_time_s;
     double reception_time_s;
     double availability_time_s;

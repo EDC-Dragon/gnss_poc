@@ -38,7 +38,7 @@ void gnss_solver_update(GnssSolver *solver, GnssSatelliteData *satellitesData, s
 {
     for (size_t i = 0; i < satellite_count; i++)
     {
-        GnssEstimatedMeasurement result = compute_pseudorange(satellitesData[i].satellite, &solver->estimated_receiver);
+        GnssEstimatedMeasurement result = compute_pseudorange(satellitesData[i].measurement.satellite_position, &solver->estimated_receiver);
         if (result.status == GNSS_OK)
             satellitesData[i].predicted_pseudorange = result.pseudorange;
         else
@@ -47,11 +47,11 @@ void gnss_solver_update(GnssSolver *solver, GnssSatelliteData *satellitesData, s
 
     for (size_t i = 0; i < satellite_count; i++)
     {
-        if (satellitesData[i].measured_pseudorange.status == GNSS_OK)
+        if (satellitesData[i].measurement.status == GNSS_OK)
         {
-            double residue = compute_residue(satellitesData[i].measured_pseudorange.pseudorange, satellitesData[i].predicted_pseudorange);
+            double residue = compute_residue(satellitesData[i].measurement.pseudorange, satellitesData[i].predicted_pseudorange);
 
-            Vec3 satellite_to_estimated_receiver = vec3_subtract(&solver->estimated_receiver.position, &satellitesData[i].satellite->position);
+            Vec3 satellite_to_estimated_receiver = vec3_subtract(&solver->estimated_receiver.position, &satellitesData[i].measurement.satellite_position);
             vec3_normalize(&satellite_to_estimated_receiver);
             satellitesData[i].observation.jacobian[0] = satellite_to_estimated_receiver.x;
             satellitesData[i].observation.jacobian[1] = satellite_to_estimated_receiver.y;
@@ -67,7 +67,7 @@ void gnss_solver_build_system(GnssSolver *solver, GnssSatelliteData *satellitesD
     solver->system = (GnssSystem){0};
     for (size_t sat = 0; sat < satellite_count; sat++)
     {
-        double sigma_m = satellitesData[sat].measured_pseudorange.sigma_m;
+        double sigma_m = satellitesData[sat].measurement.sigma_m;
         double weight = 0.0;
         if (isfinite(sigma_m) && sigma_m > 0.0)
             weight = 1.0 / (sigma_m * sigma_m);

@@ -31,31 +31,18 @@ static double uniform01(uint64_t x)
     return ((double)(x >> 11) + 0.5) / 9007199254740992.0;
 }
 
-uint64_t satellite_id_from_name(const char *name)
-{
-    uint64_t hash = UINT64_C(14695981039346656037);
-
-    while (*name)
-    {
-        hash ^= (unsigned char)*name++;
-        hash *= UINT64_C(1099511628211);
-    }
-
-    return hash;
-}
-
 // Gaussian noise at a given time for a satellite (AI Generated)
 double gaussian_noise_at_time(
-    const char *satellite_name,
-    double time_s,
-    double sigma_m)
+    const uint64_t satellite_id,
+    const double time_s,
+    const double sigma_m)
 {
     // Une valeur différente par milliseconde
     int64_t epoch_ms = (int64_t)llround(time_s * 1000.0);
 
     // Graine déterministe satellite + époque
     uint64_t seed = mix64(
-        satellite_id_from_name(satellite_name) ^ mix64((uint64_t)epoch_ms) ^ UINT64_C(0x123456789ABCDEF0));
+        mix64(satellite_id) ^ mix64((uint64_t)epoch_ms) ^ UINT64_C(0x123456789ABCDEF0));
 
     // Deux uniformes indépendantes
     double u1 = uniform01(mix64(seed));
@@ -68,13 +55,13 @@ double gaussian_noise_at_time(
 }
 
 GnssEstimatedMeasurement compute_pseudorange(
-    const Satellite *sat,
+    const Vec3 satellite_position,
     const GnssReceiverState *receiver)
 {
-    if (!sat || !receiver)
+    if (!receiver)
         return (GnssEstimatedMeasurement){.status = GNSS_INVALID_ARGUMENT};
 
-    double distance = vec3_distance(&sat->position, &receiver->position);
+    double distance = vec3_distance(&satellite_position, &receiver->position);
 
     double evaluated_pseudorange = distance + receiver->clock_bias_m;
 
@@ -85,8 +72,8 @@ GnssEstimatedMeasurement compute_pseudorange(
 }
 
 double compute_residue(
-    double measured_pseudorange,
+    double measurement,
     double estimated_pseudorange)
 {
-    return measured_pseudorange - estimated_pseudorange;
+    return measurement - estimated_pseudorange;
 }

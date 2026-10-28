@@ -14,9 +14,7 @@ typedef struct
 
 typedef struct
 {
-    Satellite *satellite;
-
-    GnssMeasurement measured_pseudorange;
+    GnssMeasurement measurement;
 
     double predicted_pseudorange;
 

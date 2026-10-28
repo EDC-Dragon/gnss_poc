@@ -13,7 +13,7 @@ typedef struct
 
 typedef struct
 {
-    char name[16];
+    SatelliteId id;
     Vec3 position;
     double time_s;
     SatelliteErrorModel error_model;
