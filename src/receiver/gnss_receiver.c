@@ -1,4 +1,4 @@
-#include "gnss_receiver.h"
+#include "receiver/gnss_receiver.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -78,7 +78,7 @@ void gnss_receiver_unlink_obsolete_satellites(GnssReceiver *receiver, double tim
     }
 }
 
-void gnss_receiver_update_satellite(GnssReceiver *receiver, GnssMeasurement measurement)
+void gnss_receiver_add_measurement(GnssReceiver *receiver, GnssMeasurement measurement)
 {
     GnssSatelliteSearchResult res = gnss_receiver_find_satellite(receiver, measurement.satellite_id);
     if (!res.found)

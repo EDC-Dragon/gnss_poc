@@ -2,7 +2,7 @@
 
 #include "gnss_types.h"
 #include "gnss_satellite.h"
-#include "gnss_receiver.h"
+#include "receiver/gnss_receiver.h"
 
 double gaussian_noise(double sigma);
 

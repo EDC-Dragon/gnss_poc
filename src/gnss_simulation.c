@@ -4,10 +4,10 @@
 #include <stddef.h>
 
 #include "gnss_types.h"
-#include "gnss_solver.h"
 #include "gnss_math.h"
 #include "gnss_satellite.h"
-#include "gnss_receiver.h"
+#include "receiver/gnss_receiver.h"
+#include "receiver/solver/gnss_solver.h"
 
 GnssMeasurement simulate_pseudorange_measurement(
     const Satellite *sat,
@@ -62,6 +62,6 @@ void gnss_simulated_evaluate_measurement(GnssSimulatedReceiver *simulated_receiv
 
         GnssMeasurement measurement = simulate_pseudorange_measurement(sat, &simulated_receiver->true_receiver, reception_time_s);
 
-        gnss_receiver_update_satellite(receiver, measurement);
+        gnss_receiver_add_measurement(receiver, measurement);
     }
 }

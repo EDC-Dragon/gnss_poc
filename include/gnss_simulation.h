@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gnss_types.h"
-#include "gnss_receiver.h"
+#include "receiver/gnss_receiver.h"
 
 typedef struct
 {

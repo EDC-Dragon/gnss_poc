@@ -1,4 +1,4 @@
-#include "gnss_solver.h"
+#include "receiver/solver/gnss_solver.h"
 
 #include <math.h>
 #include <stddef.h>
@@ -8,7 +8,7 @@
 #include "gnss_types.h"
 #include "gnss_simulation.h"
 #include "gnss_math.h"
-#include "gnss_receiver.h"
+#include "receiver/gnss_receiver.h"
 
 GnssSolver *gnss_solver_create()
 {
@@ -97,7 +97,7 @@ void gnss_solver_print_system(GnssSolver *solver)
     }
 }
 
-void gnss_solver_solve_system(GnssSolver *solver)
+GnssStatus gnss_solver_solve_system(GnssSolver *solver)
 {
     for (size_t root_index = 0; root_index < 3; root_index++)
     {
@@ -114,7 +114,7 @@ void gnss_solver_solve_system(GnssSolver *solver)
         if (largest_value < 1e-12)
         {
             printf("Numerical error: largest pivot is too small\n");
-            return;
+            return GNSS_NUMERICAL_ERROR;
         }
         if (largest_row != root_index)
         {
@@ -151,6 +151,7 @@ void gnss_solver_solve_system(GnssSolver *solver)
         }
         solver->system.state_correction[i] = result / solver->system.A[i][i];
     }
+    return GNSS_OK;
 }
 
 void gnss_solver_apply_system_correction(GnssSolver *solver)
@@ -161,7 +162,7 @@ void gnss_solver_apply_system_correction(GnssSolver *solver)
     solver->estimated_receiver.clock_bias_m += solver->system.state_correction[3];
 }
 
-void gnss_solver_solve(GnssSolver *solver, int max_iterations, double convergence_threshold, GnssSatelliteData *satellitesData, size_t satellite_count, bool verbose)
+GnssStatus gnss_solver_solve(GnssSolver *solver, int max_iterations, double convergence_threshold, GnssSatelliteData *satellitesData, size_t satellite_count, bool verbose)
 {
     for (int i = 0; i < max_iterations; i++)
     {
@@ -171,7 +172,15 @@ void gnss_solver_solve(GnssSolver *solver, int max_iterations, double convergenc
         }
         gnss_solver_update(solver, satellitesData, satellite_count);
         gnss_solver_build_system(solver, satellitesData, satellite_count);
-        gnss_solver_solve_system(solver);
+        switch (gnss_solver_solve_system(solver))
+        {
+        case GNSS_OK:
+            break;
+        case GNSS_NUMERICAL_ERROR:
+            return GNSS_NUMERICAL_ERROR;
+        case GNSS_INVALID_ARGUMENT:
+            return GNSS_INVALID_ARGUMENT;
+        } // TODO: Transient swapable structures to prevent partially editing data
         gnss_solver_apply_system_correction(solver);
         if (verbose)
         {
@@ -187,4 +196,5 @@ void gnss_solver_solve(GnssSolver *solver, int max_iterations, double convergenc
             break;
         }
     }
+    return GNSS_OK;
 }

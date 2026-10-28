@@ -2,7 +2,7 @@
 
 #include "gnss_types.h"
 #include "gnss_satellite.h"
-#include "gnss_solver.h"
+#include "receiver/solver/gnss_solver.h"
 
 typedef struct
 {
@@ -19,11 +19,7 @@ GnssReceiver *gnss_receiver_create(size_t max_satellite_count);
 
 void gnss_receiver_initialize(GnssReceiver *receiver);
 
-void gnss_receiver_link_satellite(GnssReceiver *receiver, SatelliteId satellite_id, GnssMeasurement measurement);
-
-void gnss_receiver_unlink_satellite(GnssReceiver *receiver, SatelliteId satellite_id);
-
-void gnss_receiver_update_satellite(GnssReceiver *receiver, GnssMeasurement measurement);
+void gnss_receiver_add_measurement(GnssReceiver *receiver, GnssMeasurement measurement);
 
 void gnss_receiver_update(GnssReceiver *receiver, double time);
 
