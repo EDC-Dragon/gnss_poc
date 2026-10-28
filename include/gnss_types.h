@@ -29,7 +29,8 @@ typedef struct
     double pseudorange;
     double sigma_m;
     double transmission_time_s;
-    double arrival_time_s;
+    double reception_time_s;
+    double availability_time_s;
 } GnssMeasurement;
 
 typedef struct

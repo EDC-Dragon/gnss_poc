@@ -2,6 +2,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <math.h>
 
 GnssReceiver *gnss_receiver_create(size_t max_satellite_count)
 {
@@ -71,7 +74,7 @@ void gnss_receiver_unlink_obsolete_satellites(GnssReceiver *receiver, double tim
     // Reverse order to avoid shifting issues
     for (size_t i = receiver->satellite_count; i > 0; i--)
     {
-        double age = time_s - receiver->satellitesData[i - 1].measured_pseudorange.arrival_time_s;
+        double age = time_s - receiver->satellitesData[i - 1].measured_pseudorange.reception_time_s;
         if (age > satellite_obsolescence_age_s)
             gnss_receiver_unlink_satellite(receiver, receiver->satellitesData[i - 1].satellite);
     }
@@ -95,16 +98,31 @@ void gnss_receiver_update(GnssReceiver *receiver, double time_s)
     double satellite_obsolescence_age_s = 10.0;
     gnss_receiver_unlink_obsolete_satellites(receiver, time_s, satellite_obsolescence_age_s);
 
-    double obsolescence_age_s = 0.2;
     GnssSatelliteData valid_satellite_data[receiver->satellite_count];
     size_t valid_satellite_count = 0;
 
+    double epoch_time_s = 0.0;
     for (size_t i = 0; i < receiver->satellite_count; i++)
     {
-        if (receiver->satellitesData[i].measured_pseudorange.status != GNSS_OK)
+        GnssMeasurement *m = &receiver->satellitesData[i].measured_pseudorange;
+        if (m->status != GNSS_OK)
             continue;
-        double data_age_s = time_s - receiver->satellitesData[i].measured_pseudorange.arrival_time_s;
-        if (obsolescence_age_s < data_age_s)
+        if (m->availability_time_s > time_s)
+            continue;
+        if (m->reception_time_s > epoch_time_s)
+            epoch_time_s = m->reception_time_s;
+    }
+
+    printf("Epoch time: %f\n", epoch_time_s);
+
+    for (size_t i = 0; i < receiver->satellite_count; i++)
+    {
+        GnssMeasurement *m = &receiver->satellitesData[i].measured_pseudorange;
+        if (m->status != GNSS_OK)
+            continue;
+        if (m->availability_time_s > time_s)
+            continue;
+        if (fabs(m->reception_time_s - epoch_time_s) > 1e-6)
             continue;
         valid_satellite_data[valid_satellite_count] = receiver->satellitesData[i];
         valid_satellite_count++;
