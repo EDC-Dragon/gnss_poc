@@ -5,18 +5,7 @@
 #include "receiver/estimator/gnss_state_estimator.h"
 #include "receiver/solver/gnss_solver.h"
 
-typedef struct
-{
-    GnssPositionClockState estimated_receiver;
-
-    GnssSolver *solver;
-
-    GnssStateEstimator *state_estimator;
-
-    GnssSatelliteData *satellitesData;
-    size_t satellite_count;
-    size_t max_satellite_count;
-} GnssReceiver;
+typedef struct GnssReceiver GnssReceiver;
 
 GnssReceiver *gnss_receiver_create(size_t max_satellite_count);
 

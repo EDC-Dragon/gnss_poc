@@ -2,6 +2,11 @@
 
 #include <stdlib.h>
 
+struct GnssStateEstimator
+{
+    GnssEstimatedState estimated_state;
+};
+
 GnssStateEstimator *gnss_state_estimator_create()
 {
     GnssStateEstimator *estimator = (GnssStateEstimator *)malloc(sizeof(GnssStateEstimator));

@@ -8,6 +8,19 @@
 
 #include "receiver/estimator/gnss_state_estimator_types.h"
 
+struct GnssReceiver
+{
+    GnssPositionClockState estimated_receiver;
+
+    GnssSolver *solver;
+
+    GnssStateEstimator *state_estimator;
+
+    GnssSatelliteData *satellitesData;
+    size_t satellite_count;
+    size_t max_satellite_count;
+};
+
 GnssReceiver *gnss_receiver_create(size_t max_satellite_count)
 {
     GnssReceiver *receiver = (GnssReceiver *)malloc(sizeof(GnssReceiver));

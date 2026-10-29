@@ -5,10 +5,7 @@
 #include "gnss_types.h"
 #include "gnss_state_estimator_types.h"
 
-typedef struct
-{
-    GnssEstimatedState estimated_state;
-} GnssStateEstimator;
+typedef struct GnssStateEstimator GnssStateEstimator;
 
 GnssStateEstimator *gnss_state_estimator_create();
 
