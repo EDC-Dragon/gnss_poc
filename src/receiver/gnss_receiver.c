@@ -14,7 +14,7 @@ GnssReceiver *gnss_receiver_create(size_t max_satellite_count)
     receiver->satellitesData = (GnssSatelliteData *)malloc(max_satellite_count * sizeof(GnssSatelliteData));
     receiver->satellite_count = 0;
     receiver->max_satellite_count = max_satellite_count;
-    receiver->solver = gnss_solver_create();
+    receiver->solver = gnss_solver_create(max_satellite_count);
     receiver->state_estimator = gnss_state_estimator_create();
     return receiver;
 }
@@ -106,7 +106,7 @@ void gnss_receiver_update(GnssReceiver *receiver, double time_s)
     double satellite_obsolescence_age_s = 10.0;
     gnss_receiver_unlink_obsolete_satellites(receiver, time_s, satellite_obsolescence_age_s);
 
-    GnssSatelliteData valid_satellite_data[receiver->satellite_count];
+    GnssMeasurement valid_measurements[receiver->satellite_count];
     size_t valid_satellite_count = 0;
 
     double epoch_time_s = 0.0;
@@ -132,7 +132,7 @@ void gnss_receiver_update(GnssReceiver *receiver, double time_s)
             continue;
         if (fabs(m->reception_time_s - epoch_time_s) > 1e-6)
             continue;
-        valid_satellite_data[valid_satellite_count] = receiver->satellitesData[i];
+        valid_measurements[valid_satellite_count] = receiver->satellitesData[i].measurement;
         valid_satellite_count++;
     }
 
@@ -143,7 +143,7 @@ void gnss_receiver_update(GnssReceiver *receiver, double time_s)
     }
 
     printf("Solving...\n");
-    gnss_solver_solve(receiver->solver, 100, 10e-7, valid_satellite_data, valid_satellite_count, false);
+    gnss_solver_solve(receiver->solver, 100, 10e-7, valid_measurements, valid_satellite_count, false);
     gnss_solver_print_estimated_receiver(receiver->solver);
 
     printf("State estimation...\n");

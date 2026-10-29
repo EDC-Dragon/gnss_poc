@@ -12,9 +12,9 @@ typedef struct
 {
     GnssMeasurement measurement;
 
-    double predicted_pseudorange;
+    // double predicted_pseudorange;
 
-    GnssObservation observation;
+    // GnssObservation observation;
 } GnssSatelliteData;
 
 typedef struct
