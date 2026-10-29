@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include "receiver/estimator/gnss_state_estimator_types.h"
+
 GnssReceiver *gnss_receiver_create(size_t max_satellite_count)
 {
     GnssReceiver *receiver = (GnssReceiver *)malloc(sizeof(GnssReceiver));
@@ -13,6 +15,7 @@ GnssReceiver *gnss_receiver_create(size_t max_satellite_count)
     receiver->satellite_count = 0;
     receiver->max_satellite_count = max_satellite_count;
     receiver->solver = gnss_solver_create();
+    receiver->state_estimator = gnss_state_estimator_create();
     return receiver;
 }
 
@@ -23,12 +26,14 @@ void gnss_receiver_initialize(GnssReceiver *receiver)
         receiver->satellitesData[i] = (GnssSatelliteData){0};
     }
     gnss_solver_initialize(receiver->solver);
+    gnss_state_estimator_initialize(receiver->state_estimator);
 }
 
 void gnss_receiver_free(GnssReceiver *receiver)
 {
     free(receiver->satellitesData);
     gnss_solver_free(receiver->solver);
+    gnss_state_estimator_free(receiver->state_estimator);
     free(receiver);
 }
 
@@ -96,6 +101,8 @@ void gnss_receiver_add_measurement(GnssReceiver *receiver, GnssMeasurement measu
 
 void gnss_receiver_update(GnssReceiver *receiver, double time_s)
 {
+    printf("------------------------------------------\n");
+    printf("Updating GNSS receiver at time %f\n", time_s);
     double satellite_obsolescence_age_s = 10.0;
     gnss_receiver_unlink_obsolete_satellites(receiver, time_s, satellite_obsolescence_age_s);
 
@@ -135,7 +142,13 @@ void gnss_receiver_update(GnssReceiver *receiver, double time_s)
         return;
     }
 
+    printf("Solving...\n");
     gnss_solver_solve(receiver->solver, 100, 10e-7, valid_satellite_data, valid_satellite_count, false);
-
     gnss_solver_print_estimated_receiver(receiver->solver);
+
+    printf("State estimation...\n");
+    gnss_state_estimator_update(receiver->state_estimator, &receiver->estimated_receiver);
+    GnssEstimatedState *estimated_state = gnss_state_estimator_get_estimated_state(receiver->state_estimator);
+    gnss_estimated_state_print(estimated_state);
+    printf("Done\n");
 }

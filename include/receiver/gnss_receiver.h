@@ -2,6 +2,7 @@
 
 #include "gnss_types.h"
 #include "gnss_satellite.h"
+#include "receiver/estimator/gnss_state_estimator.h"
 #include "receiver/solver/gnss_solver.h"
 
 typedef struct
@@ -9,6 +10,8 @@ typedef struct
     GnssReceiverState estimated_receiver;
 
     GnssSolver *solver;
+
+    GnssStateEstimator *state_estimator;
 
     GnssSatelliteData *satellitesData;
     size_t satellite_count;

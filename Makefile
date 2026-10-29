@@ -6,8 +6,9 @@ LDLIBS = -lm
 BUILD_DIR = build
 
 CODE_SRC = src/*.c
-CODE_SRC += src/receiver/gnss_receiver.c
-CODE_SRC += src/receiver/solver/gnss_solver.c
+CODE_SRC += src/receiver/*.c
+CODE_SRC += src/receiver/solver/*.c
+CODE_SRC += src/receiver/estimator/*.c
 
 TARGET = $(BUILD_DIR)/gnss_poc
 SRC = $(CODE_SRC) src/main.c 
