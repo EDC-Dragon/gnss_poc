@@ -13,23 +13,20 @@
 typedef struct PseudoRangeTestCase
 {
     Satellite sat;
-    GnssReceiverState receiver;
-    GnssEstimatedMeasurement expected_result;
+    GnssPositionClockState receiver;
+    GnssStatus expected_status;
+    double expected_pseudorange_m;
     bool should_pass;
 } PseudoRangeTestCase;
 
 typedef struct MultiPseudoRangeTestCase
 {
     Satellite *satellites;
-    GnssReceiverState receiver;
-    GnssEstimatedMeasurement *expected_results;
+    GnssPositionClockState receiver;
+    GnssStatus *expected_statuses;
+    double *expected_pseudoranges_m;
     bool should_pass;
 } MultiPseudoRangeTestCase;
-
-bool compare_gnss_results(GnssEstimatedMeasurement a, GnssEstimatedMeasurement b)
-{
-    return a.status == b.status && fabs(a.pseudorange - b.pseudorange) < 1e-6;
-}
 
 void run_pseudorange_tests()
 {
@@ -45,7 +42,7 @@ void run_pseudorange_tests()
         {.position = {20000000.0, 0.0, 0.0}},
         {.position = {100.0, 200.0, 300.0}}};
 
-    GnssReceiverState receivers[] = {
+    GnssPositionClockState receivers[] = {
         {.position = {0.0, 0.0, 0.0}, .clock_bias_m = 0.0},
         {.position = {0.0, 0.0, 0.0}, .clock_bias_m = 0.0},
         {.position = {0.0, 0.0, 0.0}, .clock_bias_m = -50.0},
@@ -54,33 +51,47 @@ void run_pseudorange_tests()
         {.position = {0.0, 0.0, 0.0}, .clock_bias_m = 300.0},
         {.position = {0.0, 0.0, 0.0}, .clock_bias_m = 42.0 - sqrt(140000.0)}};
 
-    GnssEstimatedMeasurement gnssResult[] = {
-        {.status = GNSS_OK, .pseudorange = 20000.0},
-        {.status = GNSS_OK, .pseudorange = 13.0},
-        {.status = GNSS_OK, .pseudorange = 950.0},
-        {.status = GNSS_OK, .pseudorange = 113.0},
-        {.status = GNSS_OK, .pseudorange = 38.0},
-        {.status = GNSS_OK, .pseudorange = 20000300.0},
-        {.status = GNSS_OK, .pseudorange = 42.0}};
+    GnssStatus gnssResult[] = {
+        GNSS_OK,
+        GNSS_OK,
+        GNSS_OK,
+        GNSS_OK,
+        GNSS_OK,
+        GNSS_OK,
+        GNSS_OK};
+
+    double expected_pseudoranges_m[] = {
+        20000.0,
+        13.0,
+        950.0,
+        113.0,
+        38.0,
+        20000300.0,
+        42.0};
 
     // Satellite pseudorange tests
     PseudoRangeTestCase tests[] = {
-        {.sat = satellites[0], .receiver = receivers[0], .expected_result = gnssResult[0], .should_pass = true},
-        {.sat = satellites[0], .receiver = receivers[0], .expected_result = gnssResult[1], .should_pass = false},
-        {.sat = satellites[1], .receiver = receivers[1], .expected_result = gnssResult[1], .should_pass = true},
-        {.sat = satellites[2], .receiver = receivers[2], .expected_result = gnssResult[2], .should_pass = true},
-        {.sat = satellites[3], .receiver = receivers[3], .expected_result = gnssResult[3], .should_pass = true},
-        {.sat = satellites[4], .receiver = receivers[4], .expected_result = gnssResult[4], .should_pass = true},
-        {.sat = satellites[5], .receiver = receivers[5], .expected_result = gnssResult[5], .should_pass = true},
-        {.sat = satellites[6], .receiver = receivers[6], .expected_result = gnssResult[6], .should_pass = true}};
+        {.sat = satellites[0], .receiver = receivers[0], .expected_status = gnssResult[0], .expected_pseudorange_m = expected_pseudoranges_m[0], .should_pass = true},
+        {.sat = satellites[0], .receiver = receivers[0], .expected_status = gnssResult[1], .expected_pseudorange_m = expected_pseudoranges_m[1], .should_pass = false},
+        {.sat = satellites[1], .receiver = receivers[1], .expected_status = gnssResult[1], .expected_pseudorange_m = expected_pseudoranges_m[2], .should_pass = true},
+        {.sat = satellites[2], .receiver = receivers[2], .expected_status = gnssResult[2], .expected_pseudorange_m = expected_pseudoranges_m[3], .should_pass = true},
+        {.sat = satellites[3], .receiver = receivers[3], .expected_status = gnssResult[3], .expected_pseudorange_m = expected_pseudoranges_m[4], .should_pass = true},
+        {.sat = satellites[4], .receiver = receivers[4], .expected_status = gnssResult[4], .expected_pseudorange_m = expected_pseudoranges_m[5], .should_pass = true},
+        {.sat = satellites[5], .receiver = receivers[5], .expected_status = gnssResult[5], .expected_pseudorange_m = expected_pseudoranges_m[6], .should_pass = true},
+        {.sat = satellites[6], .receiver = receivers[6], .expected_status = gnssResult[6], .expected_pseudorange_m = expected_pseudoranges_m[7], .should_pass = true}};
 
     printf("========================================\n");
     printf("Running pseudorange tests...\n");
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++)
     {
         PseudoRangeTestCase test = tests[i];
-        GnssEstimatedMeasurement gnssResult = compute_pseudorange(test.sat.position, &test.receiver);
-        bool result = compare_gnss_results(gnssResult, test.expected_result);
+        double pseudorange_m;
+        GnssStatus status = compute_pseudorange(test.sat.position, &test.receiver, &pseudorange_m);
+        bool result = true;
+        if (status != test.expected_status)
+            result = false;
+        if (pseudorange_m != test.expected_pseudorange_m)
+            result = false;
         if (result == test.should_pass)
         {
             printf("Test %lu PASSED\n", i);
@@ -88,8 +99,8 @@ void run_pseudorange_tests()
         else
         {
             printf("Test %lu FAILED\n", i);
-            printf("Expected: status=%d, pseudorange=%f\n", test.expected_result.status, test.expected_result.pseudorange);
-            printf("Got: status=%d, pseudorange=%f\n", gnssResult.status, gnssResult.pseudorange);
+            printf("Expected: status=%d, pseudorange=%f\n", test.expected_status, test.expected_pseudorange_m);
+            printf("Got: status=%d, pseudorange=%f\n", status, pseudorange_m);
             all_tests_passed = false;
         }
     }

@@ -30,7 +30,7 @@ typedef struct
 {
     GnssStatus status;
 
-    double pseudorange;
+    double pseudorange_m;
     double sigma_m;
 
     SatelliteId satellite_id;
@@ -41,15 +41,19 @@ typedef struct
     double availability_time_s;
 } GnssMeasurement;
 
-typedef struct
-{
-    GnssStatus status;
-    double pseudorange;
-} GnssEstimatedMeasurement;
-
+// Physical Time State (Position, Clock Bias and Time)
 typedef struct
 {
     double time_s;
     Vec3 position;
     double clock_bias_m;
-} GnssReceiverState;
+} GnssPositionClockState;
+
+// Physical Time State (Position, Clock Bias, Velocity and Time)
+typedef struct
+{
+    double time_s;
+    Vec3 position;
+    double clock_bias_m;
+    Vec3 velocity;
+} GnssPositionVelocityTimeState;

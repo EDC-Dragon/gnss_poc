@@ -11,7 +11,7 @@
 
 GnssMeasurement simulate_pseudorange_measurement(
     const Satellite *sat,
-    const GnssReceiverState *true_receiver,
+    const GnssPositionClockState *true_receiver,
     double reception_time_s)
 {
     if (!sat || !true_receiver)
@@ -33,7 +33,7 @@ GnssMeasurement simulate_pseudorange_measurement(
     double processing_delay_s = 0.0;
     double availability_time_s = reception_time_s + processing_delay_s;
 
-    return (GnssMeasurement){.status = GNSS_OK, .pseudorange = pseudorange_with_noise, .sigma_m = sigma_m, .satellite_id = sat->id, .satellite_position = sat->position, .transmission_time_s = transmission_time_s, .reception_time_s = reception_time_s, .availability_time_s = availability_time_s};
+    return (GnssMeasurement){.status = GNSS_OK, .pseudorange_m = pseudorange_with_noise, .sigma_m = sigma_m, .satellite_id = sat->id, .satellite_position = sat->position, .transmission_time_s = transmission_time_s, .reception_time_s = reception_time_s, .availability_time_s = availability_time_s};
 }
 
 void gnss_simulated_receiver_init(GnssSimulatedReceiver *receiver, Vec3 initial_position, double initial_clock_bias_m, Vec3 initial_velocity)

@@ -20,7 +20,7 @@ void gnss_state_estimator_initialize(GnssStateEstimator *estimator)
     estimator->estimated_state.time_s = 0.0;
 }
 
-GnssStatus gnss_state_estimator_update(GnssStateEstimator *estimator, const GnssReceiverState *measurement)
+GnssStatus gnss_state_estimator_update(GnssStateEstimator *estimator, const GnssPositionClockState *measurement)
 {
     if (estimator == NULL || measurement == NULL)
     {

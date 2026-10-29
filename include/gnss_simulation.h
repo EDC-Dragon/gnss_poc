@@ -5,7 +5,7 @@
 
 typedef struct
 {
-    GnssReceiverState true_receiver;
+    GnssPositionClockState true_receiver;
     Vec3 velocity;
 } GnssSimulatedReceiver;
 

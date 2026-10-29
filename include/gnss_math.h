@@ -8,9 +8,10 @@ double gaussian_noise(double sigma);
 
 double gaussian_noise_at_time(const uint64_t satellite_id, const double time_s, const double sigma_m);
 
-GnssEstimatedMeasurement compute_pseudorange(
+GnssStatus compute_pseudorange(
     const Vec3 satellite_position,
-    const GnssReceiverState *receiver);
+    const GnssPositionClockState *receiver,
+    double *pseudorange_m);
 
 double compute_residue(
     double measurement,

@@ -54,21 +54,23 @@ double gaussian_noise_at_time(
     return sigma_m * z;
 }
 
-GnssEstimatedMeasurement compute_pseudorange(
+GnssStatus compute_pseudorange(
     const Vec3 satellite_position,
-    const GnssReceiverState *receiver)
+    const GnssPositionClockState *receiver,
+    double *pseudorange_m)
 {
-    if (!receiver)
-        return (GnssEstimatedMeasurement){.status = GNSS_INVALID_ARGUMENT};
+    if (!receiver || !pseudorange_m)
+        return GNSS_INVALID_ARGUMENT;
 
     double distance = vec3_distance(&satellite_position, &receiver->position);
 
     double evaluated_pseudorange = distance + receiver->clock_bias_m;
 
     if (!isfinite(evaluated_pseudorange))
-        return (GnssEstimatedMeasurement){.status = GNSS_NUMERICAL_ERROR};
+        return GNSS_NUMERICAL_ERROR;
 
-    return (GnssEstimatedMeasurement){.status = GNSS_OK, .pseudorange = evaluated_pseudorange};
+    *pseudorange_m = evaluated_pseudorange;
+    return GNSS_OK;
 }
 
 double compute_residue(

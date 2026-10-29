@@ -7,7 +7,7 @@
 
 typedef struct
 {
-    GnssReceiverState estimated_receiver;
+    GnssPositionClockState estimated_receiver;
 
     GnssSolver *solver;
 

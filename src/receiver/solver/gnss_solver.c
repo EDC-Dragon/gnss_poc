@@ -23,24 +23,25 @@ void gnss_solver_free(GnssSolver *solver)
 
 void gnss_solver_initialize(GnssSolver *solver)
 {
-    solver->estimated_receiver = (GnssReceiverState){
+    solver->estimated_receiver = (GnssPositionClockState){
         .position = {0.0, 0.0, 0.0},
         .clock_bias_m = 0.0};
 }
 
 void gnss_solver_print_estimated_receiver(GnssSolver *solver)
 {
-    printf("Estimated GnssReceiverState Position: (%f, %f, %f)\n", solver->estimated_receiver.position.x, solver->estimated_receiver.position.y, solver->estimated_receiver.position.z);
-    printf("Estimated GnssReceiverState Clock Bias: %f\n", solver->estimated_receiver.clock_bias_m);
+    printf("Estimated GnssPositionClockState Position: (%f, %f, %f)\n", solver->estimated_receiver.position.x, solver->estimated_receiver.position.y, solver->estimated_receiver.position.z);
+    printf("Estimated GnssPositionClockState Clock Bias: %f\n", solver->estimated_receiver.clock_bias_m);
 }
 
 void gnss_solver_update(GnssSolver *solver, GnssSatelliteData *satellitesData, size_t satellite_count)
 {
     for (size_t i = 0; i < satellite_count; i++)
     {
-        GnssEstimatedMeasurement result = compute_pseudorange(satellitesData[i].measurement.satellite_position, &solver->estimated_receiver);
-        if (result.status == GNSS_OK)
-            satellitesData[i].predicted_pseudorange = result.pseudorange;
+        double pseudorange_m;
+        GnssStatus status = compute_pseudorange(satellitesData[i].measurement.satellite_position, &solver->estimated_receiver, &pseudorange_m);
+        if (status == GNSS_OK)
+            satellitesData[i].predicted_pseudorange = pseudorange_m;
         else
             satellitesData[i].predicted_pseudorange = NAN;
     }
@@ -49,7 +50,7 @@ void gnss_solver_update(GnssSolver *solver, GnssSatelliteData *satellitesData, s
     {
         if (satellitesData[i].measurement.status == GNSS_OK)
         {
-            double residue = compute_residue(satellitesData[i].measurement.pseudorange, satellitesData[i].predicted_pseudorange);
+            double residue = compute_residue(satellitesData[i].measurement.pseudorange_m, satellitesData[i].predicted_pseudorange);
 
             Vec3 satellite_to_estimated_receiver = vec3_subtract(&solver->estimated_receiver.position, &satellitesData[i].measurement.satellite_position);
             vec3_normalize(&satellite_to_estimated_receiver);

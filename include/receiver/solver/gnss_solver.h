@@ -6,33 +6,13 @@
 #include "gnss_types.h"
 #include "gnss_satellite.h"
 
-typedef struct
-{
-    double jacobian[4];
-    double residue;
-} GnssObservation;
-
-typedef struct
-{
-    GnssMeasurement measurement;
-
-    double predicted_pseudorange;
-
-    GnssObservation observation;
-} GnssSatelliteData;
-
-typedef struct
-{
-    double A[4][4];
-    double B[4];
-    double state_correction[4];
-} GnssSystem;
+#include "gnss_solver_types.h"
 
 typedef struct
 {
     GnssSystem system;
 
-    GnssReceiverState estimated_receiver;
+    GnssPositionClockState estimated_receiver;
 } GnssSolver;
 
 GnssSolver *gnss_solver_create();
