@@ -10,13 +10,13 @@
 
 struct GnssReceiver
 {
-    GnssPositionClockState estimated_receiver;
+    // GnssPositionClockState estimated_receiver;
 
     GnssSolver *solver;
 
     GnssStateEstimator *state_estimator;
 
-    GnssSatelliteData *satellitesData;
+    GnssMeasurement *measurements;
     size_t satellite_count;
     size_t max_satellite_count;
 };
@@ -24,7 +24,7 @@ struct GnssReceiver
 GnssReceiver *gnss_receiver_create(size_t max_satellite_count)
 {
     GnssReceiver *receiver = (GnssReceiver *)malloc(sizeof(GnssReceiver));
-    receiver->satellitesData = (GnssSatelliteData *)malloc(max_satellite_count * sizeof(GnssSatelliteData));
+    receiver->measurements = (GnssMeasurement *)malloc(max_satellite_count * sizeof(GnssMeasurement));
     receiver->satellite_count = 0;
     receiver->max_satellite_count = max_satellite_count;
     receiver->solver = gnss_solver_create(max_satellite_count);
@@ -36,7 +36,7 @@ void gnss_receiver_initialize(GnssReceiver *receiver)
 {
     for (size_t i = 0; i < receiver->satellite_count; i++)
     {
-        receiver->satellitesData[i] = (GnssSatelliteData){0};
+        receiver->measurements[i] = (GnssMeasurement){0};
     }
     gnss_solver_initialize(receiver->solver);
     gnss_state_estimator_initialize(receiver->state_estimator);
@@ -44,7 +44,7 @@ void gnss_receiver_initialize(GnssReceiver *receiver)
 
 void gnss_receiver_free(GnssReceiver *receiver)
 {
-    free(receiver->satellitesData);
+    free(receiver->measurements);
     gnss_solver_free(receiver->solver);
     gnss_state_estimator_free(receiver->state_estimator);
     free(receiver);
@@ -59,7 +59,7 @@ typedef struct
 GnssSatelliteSearchResult gnss_receiver_find_satellite(GnssReceiver *receiver, SatelliteId satellite_id)
 {
     for (size_t i = 0; i < receiver->satellite_count; i++)
-        if (receiver->satellitesData[i].measurement.satellite_id == satellite_id)
+        if (receiver->measurements[i].satellite_id == satellite_id)
             return (GnssSatelliteSearchResult){true, i};
     return (GnssSatelliteSearchResult){false, 0};
 }
@@ -69,7 +69,7 @@ void gnss_receiver_link_satellite(GnssReceiver *receiver, SatelliteId satellite_
     GnssSatelliteSearchResult res = gnss_receiver_find_satellite(receiver, satellite_id);
     if (!res.found && receiver->satellite_count < receiver->max_satellite_count)
     {
-        receiver->satellitesData[receiver->satellite_count].measurement = measurement;
+        receiver->measurements[receiver->satellite_count] = measurement;
         receiver->satellite_count++;
     }
 }
@@ -81,7 +81,7 @@ void gnss_receiver_unlink_satellite(GnssReceiver *receiver, SatelliteId satellit
     {
         receiver->satellite_count--;
         for (size_t i = res.index; i < receiver->satellite_count; i++)
-            receiver->satellitesData[i] = receiver->satellitesData[i + 1];
+            receiver->measurements[i] = receiver->measurements[i + 1];
     }
 }
 
@@ -90,9 +90,9 @@ void gnss_receiver_unlink_obsolete_satellites(GnssReceiver *receiver, double tim
     // Reverse order to avoid shifting issues
     for (size_t i = receiver->satellite_count; i > 0; i--)
     {
-        double age = time_s - receiver->satellitesData[i - 1].measurement.reception_time_s;
+        double age = time_s - receiver->measurements[i - 1].reception_time_s;
         if (age > satellite_obsolescence_age_s)
-            gnss_receiver_unlink_satellite(receiver, receiver->satellitesData[i - 1].measurement.satellite_id);
+            gnss_receiver_unlink_satellite(receiver, receiver->measurements[i - 1].satellite_id);
     }
 }
 
@@ -108,7 +108,7 @@ void gnss_receiver_add_measurement(GnssReceiver *receiver, GnssMeasurement measu
     if (res.found)
     {
         printf("Updating satellite %lu\n", measurement.satellite_id);
-        receiver->satellitesData[res.index].measurement = measurement;
+        receiver->measurements[res.index] = measurement;
     }
 }
 
@@ -125,7 +125,7 @@ void gnss_receiver_update(GnssReceiver *receiver, double time_s)
     double epoch_time_s = 0.0;
     for (size_t i = 0; i < receiver->satellite_count; i++)
     {
-        GnssMeasurement *m = &receiver->satellitesData[i].measurement;
+        GnssMeasurement *m = &receiver->measurements[i];
         if (m->status != GNSS_OK)
             continue;
         if (m->availability_time_s > time_s)
@@ -138,14 +138,14 @@ void gnss_receiver_update(GnssReceiver *receiver, double time_s)
 
     for (size_t i = 0; i < receiver->satellite_count; i++)
     {
-        GnssMeasurement *m = &receiver->satellitesData[i].measurement;
+        GnssMeasurement *m = &receiver->measurements[i];
         if (m->status != GNSS_OK)
             continue;
         if (m->availability_time_s > time_s)
             continue;
         if (fabs(m->reception_time_s - epoch_time_s) > 1e-6)
             continue;
-        valid_measurements[valid_satellite_count] = receiver->satellitesData[i].measurement;
+        valid_measurements[valid_satellite_count] = receiver->measurements[i];
         valid_satellite_count++;
     }
 
@@ -158,9 +158,11 @@ void gnss_receiver_update(GnssReceiver *receiver, double time_s)
     printf("Solving...\n");
     gnss_solver_solve(receiver->solver, 100, 10e-7, valid_measurements, valid_satellite_count, false);
     gnss_solver_print_estimated_receiver(receiver->solver);
+    GnssPositionClockState *estimated_state_from_solver = gnss_solver_get_estimated_state(receiver->solver);
 
     printf("State estimation...\n");
-    gnss_state_estimator_update(receiver->state_estimator, &receiver->estimated_receiver);
+    gnss_state_estimator_update(receiver->state_estimator, estimated_state_from_solver);
+
     GnssEstimatedState *estimated_state = gnss_state_estimator_get_estimated_state(receiver->state_estimator);
     gnss_estimated_state_print(estimated_state);
     printf("Done\n");

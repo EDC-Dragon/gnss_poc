@@ -20,17 +20,19 @@ typedef struct
 
 struct GnssSolver
 {
+    size_t max_satellite_count;
     GnssSolverSatelliteContext *satellite_contexts;
 
     GnssSystem system;
 
-    GnssPositionClockState estimated_receiver;
+    GnssPositionClockState estimated_state;
 };
 
 GnssSolver *gnss_solver_create(size_t max_satellite_count)
 {
     GnssSolver *solver = malloc(sizeof(GnssSolver));
     solver->satellite_contexts = malloc(sizeof(GnssSolverSatelliteContext) * max_satellite_count);
+    solver->max_satellite_count = max_satellite_count;
     return solver;
 }
 
@@ -42,15 +44,20 @@ void gnss_solver_free(GnssSolver *solver)
 
 void gnss_solver_initialize(GnssSolver *solver)
 {
-    solver->estimated_receiver = (GnssPositionClockState){
+    solver->estimated_state = (GnssPositionClockState){
         .position = {0.0, 0.0, 0.0},
         .clock_bias_m = 0.0};
 }
 
 void gnss_solver_print_estimated_receiver(GnssSolver *solver)
 {
-    printf("Estimated GnssPositionClockState Position: (%f, %f, %f)\n", solver->estimated_receiver.position.x, solver->estimated_receiver.position.y, solver->estimated_receiver.position.z);
-    printf("Estimated GnssPositionClockState Clock Bias: %f\n", solver->estimated_receiver.clock_bias_m);
+    printf("Estimated GnssPositionClockState Position: (%f, %f, %f)\n", solver->estimated_state.position.x, solver->estimated_state.position.y, solver->estimated_state.position.z);
+    printf("Estimated GnssPositionClockState Clock Bias: %f\n", solver->estimated_state.clock_bias_m);
+}
+
+GnssPositionClockState *gnss_solver_get_estimated_state(GnssSolver *solver)
+{
+    return &solver->estimated_state;
 }
 
 void gnss_solver_update(GnssSolver *solver, const GnssMeasurement *measurements, size_t satellite_count)
@@ -59,7 +66,7 @@ void gnss_solver_update(GnssSolver *solver, const GnssMeasurement *measurements,
     {
         double pseudorange_m;
         solver->satellite_contexts[i].sigma_m = measurements[i].sigma_m;
-        GnssStatus status = compute_pseudorange(measurements[i].satellite_position, &solver->estimated_receiver, &pseudorange_m);
+        GnssStatus status = compute_pseudorange(measurements[i].satellite_position, &solver->estimated_state, &pseudorange_m);
         if (status == GNSS_OK)
             solver->satellite_contexts[i].predicted_pseudorange = pseudorange_m;
         else
@@ -72,7 +79,7 @@ void gnss_solver_update(GnssSolver *solver, const GnssMeasurement *measurements,
         {
             double residue = compute_residue(measurements[i].pseudorange_m, solver->satellite_contexts[i].predicted_pseudorange);
 
-            Vec3 satellite_to_estimated_receiver = vec3_subtract(&solver->estimated_receiver.position, &measurements[i].satellite_position);
+            Vec3 satellite_to_estimated_receiver = vec3_subtract(&solver->estimated_state.position, &measurements[i].satellite_position);
             vec3_normalize(&satellite_to_estimated_receiver);
             solver->satellite_contexts[i].observation.jacobian[0] = satellite_to_estimated_receiver.x;
             solver->satellite_contexts[i].observation.jacobian[1] = satellite_to_estimated_receiver.y;
@@ -177,14 +184,16 @@ GnssStatus gnss_solver_solve_system(GnssSolver *solver)
 
 void gnss_solver_apply_system_correction(GnssSolver *solver)
 {
-    solver->estimated_receiver.position.x += solver->system.state_correction[0];
-    solver->estimated_receiver.position.y += solver->system.state_correction[1];
-    solver->estimated_receiver.position.z += solver->system.state_correction[2];
-    solver->estimated_receiver.clock_bias_m += solver->system.state_correction[3];
+    solver->estimated_state.position.x += solver->system.state_correction[0];
+    solver->estimated_state.position.y += solver->system.state_correction[1];
+    solver->estimated_state.position.z += solver->system.state_correction[2];
+    solver->estimated_state.clock_bias_m += solver->system.state_correction[3];
 }
 
 GnssStatus gnss_solver_solve(GnssSolver *solver, int max_iterations, double convergence_threshold, const GnssMeasurement *measurements, size_t satellite_count, bool verbose)
 {
+    if (satellite_count > solver->max_satellite_count)
+        return GNSS_INVALID_ARGUMENT;
     for (int i = 0; i < max_iterations; i++)
     {
         if (verbose)

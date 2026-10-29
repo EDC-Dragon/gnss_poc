@@ -21,5 +21,8 @@ GnssStatus gnss_solver_solve(GnssSolver *solver, int max_iterations, double conv
 
 void gnss_solver_print_estimated_receiver(GnssSolver *solver);
 
+// Get the estimated GNSS state from the solver.
+GnssPositionClockState *gnss_solver_get_estimated_state(GnssSolver *solver);
+
 // Free the resources allocated for the GNSS solver.
 void gnss_solver_free(GnssSolver *solver);
