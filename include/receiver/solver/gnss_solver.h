@@ -17,7 +17,7 @@ gnss_solver_create(size_t max_satellite_count);
 void gnss_solver_initialize(GnssSolver *solver);
 
 // Solve the GNSS system iteratively until convergence or the maximum number of iterations is reached.
-GnssStatus gnss_solver_solve(GnssSolver *solver, int max_iterations, double convergence_threshold, const GnssMeasurement *measurements, size_t satellite_count, bool verbose);
+GnssStatus gnss_solver_solve(GnssSolver *solver, double epoch_time_s, int max_iterations, double convergence_threshold, const GnssMeasurement *measurements, size_t satellite_count, bool verbose);
 
 void gnss_solver_print_estimated_receiver(GnssSolver *solver);
 

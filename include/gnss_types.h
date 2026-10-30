@@ -46,6 +46,7 @@ typedef struct
 {
     double time_s;
     Vec3 position;
+    double covariance[3][3];
     double clock_bias_m;
 } GnssPositionClockState;
 

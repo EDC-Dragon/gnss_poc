@@ -9,6 +9,7 @@ CODE_SRC = src/*.c
 CODE_SRC += src/receiver/*.c
 CODE_SRC += src/receiver/solver/*.c
 CODE_SRC += src/receiver/estimator/*.c
+CODE_SRC += src/receiver/estimator/kalman_filter/*.c
 
 TARGET = $(BUILD_DIR)/gnss_poc
 SRC = $(CODE_SRC) src/main.c 

@@ -190,10 +190,11 @@ void gnss_solver_apply_system_correction(GnssSolver *solver)
     solver->estimated_state.clock_bias_m += solver->system.state_correction[3];
 }
 
-GnssStatus gnss_solver_solve(GnssSolver *solver, int max_iterations, double convergence_threshold, const GnssMeasurement *measurements, size_t satellite_count, bool verbose)
+GnssStatus gnss_solver_solve(GnssSolver *solver, double epoch_time_s, int max_iterations, double convergence_threshold, const GnssMeasurement *measurements, size_t satellite_count, bool verbose)
 {
     if (satellite_count > solver->max_satellite_count)
         return GNSS_INVALID_ARGUMENT;
+    bool converged = false;
     for (int i = 0; i < max_iterations; i++)
     {
         if (verbose)
@@ -223,8 +224,20 @@ GnssStatus gnss_solver_solve(GnssSolver *solver, int max_iterations, double conv
         }
         if (sum < convergence_threshold)
         {
+            converged = true;
             break;
         }
     }
-    return GNSS_OK;
+    if (converged)
+    {
+        solver->estimated_state.time_s = epoch_time_s;
+
+        double sigma_gnss_m = 5.0;
+        double variance_gnss = sigma_gnss_m * sigma_gnss_m;
+        matrix_identity(3, solver->estimated_state.covariance, variance_gnss);
+
+        return GNSS_OK;
+    }
+    else
+        return GNSS_NUMERICAL_ERROR;
 }

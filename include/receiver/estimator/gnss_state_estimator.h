@@ -11,7 +11,7 @@ GnssStateEstimator *gnss_state_estimator_create();
 
 void gnss_state_estimator_initialize(GnssStateEstimator *estimator);
 
-GnssStatus gnss_state_estimator_update(GnssStateEstimator *estimator, const GnssPositionClockState *measurement);
+GnssStatus gnss_state_estimator_update(GnssStateEstimator *estimator, GnssPositionClockState *measurement);
 
 GnssEstimatedState *gnss_state_estimator_get_estimated_state(GnssStateEstimator *estimator);
 

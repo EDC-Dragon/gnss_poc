@@ -156,7 +156,7 @@ void gnss_receiver_update(GnssReceiver *receiver, double time_s)
     }
 
     printf("Solving...\n");
-    gnss_solver_solve(receiver->solver, 100, 10e-7, valid_measurements, valid_satellite_count, false);
+    gnss_solver_solve(receiver->solver, epoch_time_s, 100, 10e-7, valid_measurements, valid_satellite_count, false);
     gnss_solver_print_estimated_receiver(receiver->solver);
     GnssPositionClockState *estimated_state_from_solver = gnss_solver_get_estimated_state(receiver->solver);
 
