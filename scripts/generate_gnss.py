@@ -2,132 +2,13 @@
 import csv
 from pathlib import Path
 from datetime import datetime
-
-import numpy as np
-import gnss_lib_py as glp
-
-# Position et vitesse réelles du récepteur.
-rx = np.array([4_200_000.0, 170_000.0, 4_780_000.0])
-velocity = np.array([100.0, 100.0, 100.0])
-
-state = glp.NavData()
-
-for name, value in zip(
-    ["x_rx_m", "y_rx_m", "z_rx_m"],
-    rx
-):
-    state[name] = np.array([value])
-
-for name, value in zip(
-    ["vx_rx_mps", "vy_rx_mps", "vz_rx_mps"],
-    velocity
-):
-    state[name] = np.array([value])
-
-state["b_rx_m"] = np.array([150.0])
-state["b_dot_rx_mps"] = np.array([0.0])
-
-# Construire six directions différentes au-dessus du récepteur.
-up = rx / np.linalg.norm(rx)
-
-east = np.cross(np.array([0.0, 0.0, 1.0]), up)
-east /= np.linalg.norm(east)
-
-north = np.cross(up, east)
-
-directions = np.array([
-    up,
-    up + east,
-    up - east,
-    up + north,
-    up - north,
-    up + east + north,
-])
-
-directions /= np.linalg.norm(directions, axis=1)[:, None]
-
-# Satellites synthétiques à environ 20 000 km du récepteur.
-sat_positions = rx + 20_000_000.0 * directions
-
-sv = glp.NavData()
-sv["gnss_id"] = np.array(["gps"] * 6)
-sv["sv_id"] = np.arange(1, 7)
-
-for axis, name in enumerate(["x_sv_m", "y_sv_m", "z_sv_m"]):
-    sv[name] = sat_positions[:, axis]
-
-for name in ["vx_sv_mps", "vy_sv_mps", "vz_sv_mps"]:
-    sv[name] = np.zeros(6)
-
-# Générer les observations.
-measurements, satellites = glp.simulate_measures(
-    gps_millis=1_450_000_000_000,
-    state=state,
-    sv_posvel=sv,
-    noise_dict={
-        "prange_sigma": 5.0,
-        "doppler_sigma": 1.0,
-    },
-    rng=np.random.default_rng(42),
-    el_mask=5.0,
-)
-
-print(measurements)
-
-# Export compatible avec le futur lecteur C11.
-SCRIPT_DIR = Path(__file__).resolve().parent
-output_folder = SCRIPT_DIR / ".." / "simulation_data"
-output_folder.mkdir(exist_ok=True, parents=True)
-timestamp = datetime.now().astimezone().strftime("%Y-%m-%d_%H-%M-%S")
-output = output_folder / f"measurements_{timestamp}.csv"
-
-with output.open("w", newline="") as f:
-    writer = csv.writer(f)
-
-    writer.writerow([
-        "time_s", "satellite_id",
-        "sat_x", "sat_y", "sat_z",
-        "pseudorange_m", "sigma_m"
-    ])
-
-    for i in range(len(measurements)):
-        writer.writerow([
-            0.0,
-            int(measurements["sv_id", i]),
-            float(satellites["x_sv_m", i]),
-            float(satellites["y_sv_m", i]),
-            float(satellites["z_sv_m", i]),
-            float(measurements["raw_pr_m", i]),
-            5.0,
-        ])
-
-print(f"Export : {output}")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import csv
-from pathlib import Path
-
 import numpy as np
 import gnss_lib_py as glp
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 
 # Configuration
+C = 299_792_458.0
 EPOCH_COUNT = 1000
 DT = 1.0
 GPS_START_MS = 1_450_000_000_000
@@ -230,29 +111,19 @@ output_folder = SCRIPT_DIR / ".." / "simulation_data"
 timestamp = datetime.now().astimezone().strftime("%Y-%m-%d_%H-%M-%S")
 batch_folder = output_folder / f"batch_{timestamp}"
 batch_folder.mkdir(exist_ok=True, parents=True)
-measurement_path = batch_folder / "measurements.csv"
-truth_path = batch_folder / "ground_truth.csv"
+measurement_path = batch_folder / "measurements.csv" 
 
 with (
-    measurement_path.open("w", newline="") as mf,
-    truth_path.open("w", newline="") as tf,
+    measurement_path.open("w", newline="") as mf, 
 ):
-    measurements_writer = csv.writer(mf)
-    truth_writer = csv.writer(tf)
-
-    measurements_writer.writerow([
-        "time_s", "satellite_id",
-        "sat_x", "sat_y", "sat_z",
-        "pseudorange_m", "sigma_m"
-    ])
-
-    truth_writer.writerow([
-        "time_s", "x", "y", "z",
-        "vx", "vy", "vz"
-    ])
+    measurements_writer = csv.writer(mf) 
+ 
 
     for epoch in range(EPOCH_COUNT):
         t = epoch * DT
+
+        reception_time_s = t 
+
         gps_millis = GPS_START_MS + round(t * 1000)
 
         # Position réelle du récepteur à l'époque t.
@@ -277,28 +148,58 @@ with (
 
         # Export des observations.
         for i in range(len(measurements)):
-            measurements_writer.writerow([
-                t,
-                int(measurements["sv_id", i]),
+            satellite_position = np.array([
                 float(visible_sv["x_sv_m", i]),
                 float(visible_sv["y_sv_m", i]),
                 float(visible_sv["z_sv_m", i]),
-                float(measurements["raw_pr_m", i]),
-                SIGMA_M,
             ])
 
-        # Export de la trajectoire exacte.
-        truth_writer.writerow([
-            t,
-            *receiver_position,
-            *RECEIVER_VELOCITY,
-        ])
+            # Distance géométrique satellite-récepteur.
+            geometric_distance_m = np.linalg.norm(
+                satellite_position - receiver_position
+            )
 
+            # Temps de propagation du signal.
+            propagation_time_s = geometric_distance_m / C
+
+            # Instant d'émission du signal.
+            transmission_time_s = (
+                reception_time_s - propagation_time_s
+            )
+
+            if epoch == 0:  
+                if i == 0:
+                    measurements_writer.writerow([
+                        "transmission_time_s",
+                        "reception_time_s",
+                        "satellite_id",
+                        "satellite_position_x",
+                        "satellite_position_y",
+                        "satellite_position_z",
+                        "pseudorange_m",
+                        "sigma_m",
+                        "receiver_position_x",
+                        "receiver_position_y",
+                        "receiver_position_z",
+                        "receiver_velocity_x",
+                        "receiver_velocity_y",
+                        "receiver_velocity_z",
+                    ])
+            measurements_writer.writerow([
+                transmission_time_s,
+                reception_time_s,
+                int(measurements["sv_id", i]),
+                *satellite_position,
+                float(measurements["raw_pr_m", i]),
+                SIGMA_M, 
+                *receiver_position, 
+                *RECEIVER_VELOCITY, 
+            ])
+ 
         if epoch % 100 == 0:
             print(
                 f"t={t:.0f}s | "
                 f"satellites visibles={len(measurements)}"
             )
 
-print(f"Mesures : {measurement_path}")
-print(f"Vérité terrain : {truth_path}")
+print(f"Mesures : {measurement_path}") 

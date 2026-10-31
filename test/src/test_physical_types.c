@@ -8,6 +8,7 @@
 #include "receiver/solver/gnss_solver.h"
 #include "gnss_math.h"
 #include "simulation/gnss_simulation.h"
+#include "simulation/gnss_simulation_csv_reader.h"
 #include "receiver/gnss_receiver.h"
 
 typedef struct PseudoRangeTestCase
@@ -176,8 +177,37 @@ if (!is_symmetric)
 
 */
 
+void run_sim_csv_test(const char *path)
+{
+    GnssSimulator *simulator = gnss_simulator_create();
+    gnss_simulator_initialize(simulator, path);
+    printf("Starting simulation\n");
+
+    GnssReceiver *receiver = gnss_receiver_create(GNSS_SIMULATION_MAX_SATELLITES_PER_MEASUREMENT);
+    gnss_receiver_initialize(receiver);
+
+    GnssSimulationEpoch *epoch = gnss_simulator_step(simulator);
+    while (epoch)
+    {
+        printf("Epoch time: %f\n", epoch->time_s);
+
+        for (int i = 0; i < epoch->measurement_count; i++)
+        {
+            GnssMeasurement *m = epoch->measurements[i];
+            gnss_receiver_add_measurement(receiver, *m);
+        }
+        gnss_receiver_update(receiver, epoch->time_s);
+
+        epoch = gnss_simulator_step(simulator);
+    }
+    printf("Simulation done\n");
+
+    gnss_simulator_free(simulator);
+}
+
 void test_physical_types()
 {
     // run_pseudorange_tests();
-    run_basic_gnss_test();
+    // run_basic_gnss_test();
+    run_sim_csv_test("/home/edwindc/workspace/gnss_poc/simulation_data/batch_2026-10-31_20-29-50/");
 }

@@ -2,12 +2,14 @@
 
 #include <math.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "gnss_types.h"
 #include "gnss_math.h"
 #include "satellite/gnss_satellite.h"
 #include "receiver/gnss_receiver.h"
 #include "receiver/solver/gnss_solver.h"
+#include "simulation/gnss_simulation_csv_reader.h"
 
 GnssMeasurement simulate_pseudorange_measurement(
     const Satellite *sat,
@@ -64,4 +66,30 @@ void gnss_simulated_evaluate_measurement(GnssSimulatedReceiver *simulated_receiv
 
         gnss_receiver_add_measurement(receiver, measurement);
     }
+}
+
+GnssSimulator *gnss_simulator_create()
+{
+    return malloc(sizeof(GnssSimulator));
+}
+void gnss_simulator_free(GnssSimulator *sim)
+{
+    if (sim->data)
+        free(sim->data);
+    free(sim);
+}
+
+void gnss_simulator_initialize(GnssSimulator *sim, const char *path)
+{
+    char file[1024];
+    sprintf(file, "%s/measurements.csv", path);
+    sim->data = read_simulation_csv(file);
+    sim->current_epoch = 0;
+}
+
+GnssSimulationEpoch *gnss_simulator_step(GnssSimulator *sim)
+{
+    if (sim->data->epoch_count <= sim->current_epoch)
+        return NULL;
+    return sim->data->epochs[sim->current_epoch++];
 }
