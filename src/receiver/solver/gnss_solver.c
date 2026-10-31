@@ -25,6 +25,8 @@ struct GnssSolver
 
     GnssSystem system;
 
+    GnssPositionClockState transient_state;
+
     GnssPositionClockState estimated_state;
 };
 
@@ -47,6 +49,7 @@ void gnss_solver_initialize(GnssSolver *solver)
     solver->estimated_state = (GnssPositionClockState){
         .position = {0.0, 0.0, 0.0},
         .clock_bias_m = 0.0};
+    solver->transient_state = solver->estimated_state;
 }
 
 void gnss_solver_print_estimated_receiver(GnssSolver *solver)
@@ -66,7 +69,7 @@ void gnss_solver_update(GnssSolver *solver, const GnssMeasurement *measurements,
     {
         double pseudorange_m;
         solver->satellite_contexts[i].sigma_m = measurements[i].sigma_m;
-        GnssStatus status = compute_pseudorange(measurements[i].satellite_position, &solver->estimated_state, &pseudorange_m);
+        GnssStatus status = compute_pseudorange(measurements[i].satellite_position, &solver->transient_state, &pseudorange_m);
         if (status == GNSS_OK)
             solver->satellite_contexts[i].predicted_pseudorange = pseudorange_m;
         else
@@ -79,7 +82,7 @@ void gnss_solver_update(GnssSolver *solver, const GnssMeasurement *measurements,
         {
             double residue = compute_residue(measurements[i].pseudorange_m, solver->satellite_contexts[i].predicted_pseudorange);
 
-            Vec3 satellite_to_estimated_receiver = vec3_subtract(&solver->estimated_state.position, &measurements[i].satellite_position);
+            Vec3 satellite_to_estimated_receiver = vec3_subtract(&solver->transient_state.position, &measurements[i].satellite_position);
             vec3_normalize(&satellite_to_estimated_receiver);
             solver->satellite_contexts[i].observation.jacobian[0] = satellite_to_estimated_receiver.x;
             solver->satellite_contexts[i].observation.jacobian[1] = satellite_to_estimated_receiver.y;
@@ -184,16 +187,20 @@ GnssStatus gnss_solver_solve_system(GnssSolver *solver)
 
 void gnss_solver_apply_system_correction(GnssSolver *solver)
 {
-    solver->estimated_state.position.x += solver->system.state_correction[0];
-    solver->estimated_state.position.y += solver->system.state_correction[1];
-    solver->estimated_state.position.z += solver->system.state_correction[2];
-    solver->estimated_state.clock_bias_m += solver->system.state_correction[3];
+    solver->transient_state.position.x += solver->system.state_correction[0];
+    solver->transient_state.position.y += solver->system.state_correction[1];
+    solver->transient_state.position.z += solver->system.state_correction[2];
+    solver->transient_state.clock_bias_m += solver->system.state_correction[3];
 }
 
 GnssStatus gnss_solver_solve(GnssSolver *solver, double epoch_time_s, int max_iterations, double convergence_threshold, const GnssMeasurement *measurements, size_t satellite_count, bool verbose)
 {
     if (satellite_count > solver->max_satellite_count)
         return GNSS_INVALID_ARGUMENT;
+
+    solver->transient_state = solver->estimated_state;
+    solver->transient_state.time_s = epoch_time_s;
+
     bool converged = false;
     for (int i = 0; i < max_iterations; i++)
     {
@@ -230,11 +237,20 @@ GnssStatus gnss_solver_solve(GnssSolver *solver, double epoch_time_s, int max_it
     }
     if (converged)
     {
-        solver->estimated_state.time_s = epoch_time_s;
+        gnss_solver_update(solver, measurements, satellite_count);
+        gnss_solver_build_system(solver, satellite_count);
 
-        double sigma_gnss_m = 5.0;
-        double variance_gnss = sigma_gnss_m * sigma_gnss_m;
-        matrix_identity(3, solver->estimated_state.covariance, variance_gnss);
+        double inverse_A[4][4];
+
+        GnssStatus status = matrix_inverse(4, solver->system.A, inverse_A);
+        if (status != GNSS_OK)
+            return status;
+
+        status = matrix_square_submatrix(4, inverse_A, 3, solver->transient_state.covariance);
+        if (status != GNSS_OK)
+            return status;
+
+        solver->estimated_state = solver->transient_state;
 
         return GNSS_OK;
     }

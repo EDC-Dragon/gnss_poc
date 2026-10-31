@@ -181,7 +181,8 @@ GnssStatus gnss_kalman_filter_evaluate_gain(GnssKalmanFilter *kf)
 
         double solution[3];
 
-        GnssStatus status = matrix_solve_3x3(
+        GnssStatus status = matrix_solve(
+            3,
             kf->covariance_innovation,
             b,
             solution);

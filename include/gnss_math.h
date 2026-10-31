@@ -56,10 +56,22 @@ GnssStatus matrix_identity(
     double R[n][n],
     double val);
 
-GnssStatus matrix_solve_3x3(
-    double A[3][3],
-    double b[3],
-    double x[3]);
+GnssStatus matrix_solve(
+    size_t n,
+    double A[n][n],
+    double b[n],
+    double x[n]);
+
+GnssStatus matrix_inverse(
+    size_t n,
+    double A[n][n],
+    double inverse[n][n]);
+
+GnssStatus matrix_square_submatrix(
+    size_t n,
+    double A[n][n],
+    size_t sub_n,
+    double sub[sub_n][sub_n]);
 
 GnssStatus vector_copy(
     size_t n,

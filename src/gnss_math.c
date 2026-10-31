@@ -193,28 +193,29 @@ GnssStatus matrix_identity(
     return GNSS_OK;
 }
 
-GnssStatus matrix_solve_3x3(
-    double A[3][3],
-    double b[3],
-    double x[3])
+GnssStatus matrix_solve(
+    size_t n,
+    double A[n][n],
+    double b[n],
+    double x[n])
 {
-    double M[3][4];
+    double M[n][n + 1];
 
-    for (size_t i = 0; i < 3; i++)
+    for (size_t i = 0; i < n; i++)
     {
-        for (size_t j = 0; j < 3; j++)
+        for (size_t j = 0; j < n; j++)
             M[i][j] = A[i][j];
 
-        M[i][3] = b[i];
+        M[i][n] = b[i];
     }
 
     // gaussian elimination
-    for (size_t k = 0; k < 3; k++)
+    for (size_t k = 0; k < n; k++)
     {
         size_t pivot_row = k;
         double max_value = fabs(M[k][k]);
 
-        for (size_t i = k + 1; i < 3; i++)
+        for (size_t i = k + 1; i < n; i++)
         {
             double value = fabs(M[i][k]);
 
@@ -231,7 +232,7 @@ GnssStatus matrix_solve_3x3(
         // swap rows if needed
         if (pivot_row != k)
         {
-            for (size_t j = k; j < 4; j++)
+            for (size_t j = k; j < n + 1; j++)
             {
                 double temp = M[k][j];
                 M[k][j] = M[pivot_row][j];
@@ -240,23 +241,23 @@ GnssStatus matrix_solve_3x3(
         }
 
         // eliminate below pivot
-        for (size_t i = k + 1; i < 3; i++)
+        for (size_t i = k + 1; i < n; i++)
         {
             double factor = M[i][k] / M[k][k];
 
-            for (size_t j = k; j < 4; j++)
+            for (size_t j = k; j < n + 1; j++)
                 M[i][j] -= factor * M[k][j];
         }
     }
 
     // back substitution
-    double solution[3];
+    double solution[n];
 
-    for (int i = 2; i >= 0; i--)
+    for (int i = n - 1; i >= 0; i--)
     {
-        double sum = M[i][3];
+        double sum = M[i][n];
 
-        for (int j = i + 1; j < 3; j++)
+        for (size_t j = i + 1; j < n; j++)
             sum -= M[i][j] * solution[j];
 
         solution[i] = sum / M[i][i];
@@ -265,8 +266,55 @@ GnssStatus matrix_solve_3x3(
             return GNSS_NUMERICAL_ERROR;
     }
 
-    for (size_t i = 0; i < 3; i++)
+    for (size_t i = 0; i < n; i++)
         x[i] = solution[i];
+
+    return GNSS_OK;
+}
+
+GnssStatus matrix_inverse(
+    size_t n,
+    double A[n][n],
+    double inverse[n][n])
+{
+    for (size_t col = 0; col < n; col++)
+    {
+        double b[n];
+        double x[n];
+
+        for (size_t i = 0; i < n; i++)
+            b[i] = 0;
+
+        b[col] = 1.0;
+
+        GnssStatus status = matrix_solve(n, A, b, x);
+
+        if (status != GNSS_OK)
+            return status;
+
+        for (size_t row = 0; row < n; row++)
+            inverse[row][col] = x[row];
+    }
+
+    return GNSS_OK;
+}
+
+GnssStatus matrix_square_submatrix(
+    size_t n,
+    double A[n][n],
+    size_t sub_n,
+    double sub[sub_n][sub_n])
+{
+    if (sub_n == 0 || sub_n > n)
+        return GNSS_INVALID_ARGUMENT;
+
+    for (size_t i = 0; i < sub_n; i++)
+    {
+        for (size_t j = 0; j < sub_n; j++)
+        {
+            sub[i][j] = A[i][j];
+        }
+    }
 
     return GNSS_OK;
 }
