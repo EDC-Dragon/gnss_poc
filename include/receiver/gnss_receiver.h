@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gnss_types.h"
-#include "gnss_satellite.h"
+#include "satellite/gnss_satellite.h"
 #include "receiver/estimator/gnss_state_estimator.h"
 #include "receiver/solver/gnss_solver.h"
 

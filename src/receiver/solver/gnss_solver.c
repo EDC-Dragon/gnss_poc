@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #include "gnss_types.h"
-#include "gnss_simulation.h"
+#include "simulation/gnss_simulation.h"
 #include "gnss_math.h"
 #include "receiver/gnss_receiver.h"
 

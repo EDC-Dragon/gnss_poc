@@ -1,11 +1,11 @@
-#include "gnss_simulation.h"
+#include "simulation/gnss_simulation.h"
 
 #include <math.h>
 #include <stddef.h>
 
 #include "gnss_types.h"
 #include "gnss_math.h"
-#include "gnss_satellite.h"
+#include "satellite/gnss_satellite.h"
 #include "receiver/gnss_receiver.h"
 #include "receiver/solver/gnss_solver.h"
 

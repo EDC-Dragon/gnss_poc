@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gnss_types.h"
-#include "gnss_satellite.h"
+#include "satellite/gnss_satellite.h"
 #include "receiver/gnss_receiver.h"
 
 double gaussian_noise(double sigma);

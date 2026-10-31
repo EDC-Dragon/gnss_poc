@@ -7,7 +7,7 @@
 #include "gnss_types.h"
 #include "receiver/solver/gnss_solver.h"
 #include "gnss_math.h"
-#include "gnss_simulation.h"
+#include "simulation/gnss_simulation.h"
 #include "receiver/gnss_receiver.h"
 
 typedef struct PseudoRangeTestCase

@@ -6,6 +6,8 @@ LDLIBS = -lm
 BUILD_DIR = build
 
 CODE_SRC = src/*.c
+CODE_SRC += src/satellite/*.c
+CODE_SRC += src/simulation/*.c
 CODE_SRC += src/receiver/*.c
 CODE_SRC += src/receiver/solver/*.c
 CODE_SRC += src/receiver/estimator/*.c

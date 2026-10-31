@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include "gnss_types.h"
-#include "gnss_satellite.h"
+#include "satellite/gnss_satellite.h"
 
 #include "gnss_solver_types.h"
 
