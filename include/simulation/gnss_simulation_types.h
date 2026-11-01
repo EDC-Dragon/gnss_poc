@@ -27,9 +27,3 @@ typedef struct
     GnssSimulationEpoch *epochs[GNSS_SIMULATION_MAX_EPOCHS];
     int epoch_count;
 } GnssSimulationData;
-
-typedef struct
-{
-    GnssPositionClockState true_receiver;
-    Vec3 velocity;
-} GnssSimulatedReceiver;

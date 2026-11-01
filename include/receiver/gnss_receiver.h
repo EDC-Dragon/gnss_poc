@@ -7,12 +7,11 @@
 
 typedef struct GnssReceiver GnssReceiver;
 
+// Allocation/Deallocation
 GnssReceiver *gnss_receiver_create(size_t max_satellite_count);
+void gnss_receiver_free(GnssReceiver *receiver);
 
+// Initialization
 void gnss_receiver_initialize(GnssReceiver *receiver);
 
-void gnss_receiver_add_measurement(GnssReceiver *receiver, GnssMeasurement measurement);
-
-void gnss_receiver_update(GnssReceiver *receiver, double time);
-
-void gnss_receiver_free(GnssReceiver *receiver);
+void gnss_receiver_update(GnssReceiver *receiver, GnssMeasurement *measurements, size_t measurement_count, double time_s);

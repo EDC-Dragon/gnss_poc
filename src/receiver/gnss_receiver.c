@@ -112,8 +112,11 @@ void gnss_receiver_add_measurement(GnssReceiver *receiver, GnssMeasurement measu
     }
 }
 
-void gnss_receiver_update(GnssReceiver *receiver, double time_s)
+void gnss_receiver_update(GnssReceiver *receiver, GnssMeasurement *measurements, size_t measurement_count, double time_s)
 {
+    for (size_t i = 0; i < measurement_count; i++)
+        gnss_receiver_add_measurement(receiver, measurements[i]);
+
     printf("------------------------------------------\n");
     printf("Updating GNSS receiver at time %f\n", time_s);
     double satellite_obsolescence_age_s = 10.0;
@@ -156,8 +159,8 @@ void gnss_receiver_update(GnssReceiver *receiver, double time_s)
     }
 
     printf("Solving...\n");
-    gnss_solver_solve(receiver->solver, epoch_time_s, 100, 10e-7, valid_measurements, valid_satellite_count, false);
-    gnss_solver_print_estimated_receiver(receiver->solver);
+    gnss_solver_solve(receiver->solver, valid_measurements, valid_satellite_count, epoch_time_s);
+    gnss_solver_print(receiver->solver);
     GnssPositionClockState *estimated_state_from_solver = gnss_solver_get_estimated_state(receiver->solver);
 
     printf("State estimation...\n");

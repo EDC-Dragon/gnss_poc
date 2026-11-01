@@ -118,45 +118,6 @@ void run_pseudorange_tests()
     }
 }
 
-void run_basic_gnss_test()
-{
-    GnssSimulatedReceiver simulated_receiver;
-    Vec3 initial_position = {4200000.0, 170000.0, 4780000.0};
-    double initial_clock_bias_m = 150.0;
-    Vec3 initial_velocity = {100.0, 100.0, 100.0};
-    gnss_simulated_receiver_init(&simulated_receiver, initial_position, initial_clock_bias_m, initial_velocity);
-
-    double noise_sigma_ratio = 1.0;
-    double bias_ratio = 1.0;
-
-    Satellite satellites[] = {
-        {.id = 1, .position = {15600000.0, 7540000.0, 20140000.0}, .error_model = {.bias_m = 2.0, .noise_sigma_m = 2.0}},
-        {.id = 2, .position = {18760000.0, 2750000.0, 18610000.0}, .error_model = {.bias_m = 1.0, .noise_sigma_m = 5.0}},
-        {.id = 3, .position = {17610000.0, 14630000.0, 13480000.0}, .error_model = {.bias_m = -2.0, .noise_sigma_m = 1.0}},
-        {.id = 4, .position = {19170000.0, 610000.0, 18390000.0}, .error_model = {.bias_m = -3.0, .noise_sigma_m = 7.0}},
-        {.id = 5, .position = {17800000.0, -13400000.0, 14600000.0}, .error_model = {.bias_m = 2.0, .noise_sigma_m = 8.0}},
-        {.id = 6, .position = {-13400000.0, 10200000.0, 21000000.0}, .error_model = {.bias_m = 1.0, .noise_sigma_m = 2.0}}};
-    size_t satellite_count = sizeof(satellites) / sizeof(satellites[0]);
-    for (size_t i = 0; i < satellite_count; i++)
-    {
-        satellites[i].error_model.noise_sigma_m *= noise_sigma_ratio;
-        satellites[i].error_model.bias_m *= bias_ratio;
-    }
-
-    GnssReceiver *receiver = gnss_receiver_create(satellite_count);
-    gnss_receiver_initialize(receiver);
-
-    double time_s = 0.0;
-    for (int i = 0; i < 1000; i++)
-    {
-        gnss_simulated_evaluate_measurement(&simulated_receiver, satellites, satellite_count, time_s, receiver);
-        gnss_receiver_update(receiver, time_s);
-        time_s += 1.0;
-    }
-
-    gnss_receiver_free(receiver);
-}
-
 /*
 bool is_symmetric = true;
 for (int i = 0; i < 4; i++)
@@ -191,12 +152,11 @@ void run_sim_csv_test(const char *path)
     {
         printf("Epoch time: %f\n", epoch->time_s);
 
+        // Convert into usable array
+        GnssMeasurement measurements[epoch->measurement_count];
         for (int i = 0; i < epoch->measurement_count; i++)
-        {
-            GnssMeasurement *m = epoch->measurements[i];
-            gnss_receiver_add_measurement(receiver, *m);
-        }
-        gnss_receiver_update(receiver, epoch->time_s);
+            measurements[i] = *epoch->measurements[i];
+        gnss_receiver_update(receiver, measurements, epoch->measurement_count, epoch->time_s);
 
         epoch = gnss_simulator_step(simulator);
     }
