@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "test_physical_types.h"
+#include "test_gnss_math_matrix.h"
 
 int main(int argc, char *argv[])
 {
@@ -16,6 +17,10 @@ int main(int argc, char *argv[])
         if (strcmp(argv[1], "physical_types") == 0)
         {
             test_physical_types();
+        }
+        else if (strcmp(argv[1], "math_matrix") == 0)
+        {
+            test_matrix_maths();
         }
     }
     return 0;

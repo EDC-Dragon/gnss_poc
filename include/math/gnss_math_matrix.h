@@ -4,34 +4,21 @@
 #include "satellite/gnss_satellite.h"
 #include "receiver/gnss_receiver.h"
 
-double gaussian_noise(double sigma);
-
-double gaussian_noise_at_time(const uint64_t satellite_id, const double time_s, const double sigma_m);
-
-GnssStatus compute_pseudorange(
-    const Vec3 satellite_position,
-    const GnssPositionClockState *receiver,
-    double *pseudorange_m);
-
-double compute_residue(
-    double measurement,
-    double estimated_pseudorange);
-
-void matrix_vector_multiply(
+GnssStatus matrix_vector_multiply(
     size_t rows,
     size_t cols,
     double A[rows][cols],
     double x[cols],
     double y[rows]);
 
-void vector_matrix_multiply(
+GnssStatus vector_matrix_multiply(
     size_t rows,
     size_t cols,
     double x[rows],
     double A[rows][cols],
     double y[cols]);
 
-void matrix_xmtx(
+GnssStatus matrix_xmtx(
     size_t rows_x,
     size_t cols_x,
     double X[rows_x][cols_x],

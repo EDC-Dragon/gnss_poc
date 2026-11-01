@@ -6,13 +6,17 @@
 
 #include "gnss_types.h"
 
-void matrix_vector_multiply(
+GnssStatus matrix_vector_multiply(
     size_t rows,
     size_t cols,
     double A[rows][cols],
     double x[cols],
     double y[rows])
 {
+    if (!A || !x || !y)
+        return GNSS_INVALID_ARGUMENT;
+    if (rows == 0 || cols == 0)
+        return GNSS_INVALID_ARGUMENT;
     for (size_t i = 0; i < rows; i++)
     {
         double sum = 0.0;
@@ -20,15 +24,20 @@ void matrix_vector_multiply(
             sum += A[i][j] * x[j];
         y[i] = sum;
     }
+    return GNSS_OK;
 }
 
-void vector_matrix_multiply(
+GnssStatus vector_matrix_multiply(
     size_t rows,
     size_t cols,
     double x[rows],
     double A[rows][cols],
     double y[cols])
 {
+    if (!x || !A || !y)
+        return GNSS_INVALID_ARGUMENT;
+    if (rows == 0 || cols == 0)
+        return GNSS_INVALID_ARGUMENT;
     for (size_t j = 0; j < cols; j++)
     {
         double sum = 0.0;
@@ -36,15 +45,21 @@ void vector_matrix_multiply(
             sum += x[i] * A[i][j];
         y[j] = sum;
     }
+    return GNSS_OK;
 }
 
-void matrix_xmtx(
+GnssStatus matrix_xmtx(
     size_t rows_x,
     size_t cols_x,
     double X[rows_x][cols_x],
     double M[cols_x][cols_x],
     double R[rows_x][rows_x])
 {
+    if (!X || !M || !R)
+        return GNSS_INVALID_ARGUMENT;
+    if (rows_x == 0 || cols_x == 0)
+        return GNSS_INVALID_ARGUMENT;
+
     double temp[rows_x][cols_x];
 
     // temp = X * M
@@ -74,6 +89,7 @@ void matrix_xmtx(
             R[i][j] = sum;
         }
     }
+    return GNSS_OK;
 }
 
 GnssStatus matrix_add(
@@ -83,6 +99,11 @@ GnssStatus matrix_add(
     double B[rows][cols],
     double R[rows][cols])
 {
+    if (!A || !B || !R)
+        return GNSS_INVALID_ARGUMENT;
+    if (rows == 0 || cols == 0)
+        return GNSS_INVALID_ARGUMENT;
+
     for (size_t i = 0; i < rows; i++)
         for (size_t j = 0; j < cols; j++)
             R[i][j] = A[i][j] + B[i][j];
@@ -96,6 +117,11 @@ GnssStatus matrix_copy(
     double A[rows][cols],
     double R[rows][cols])
 {
+    if (!A || !R)
+        return GNSS_INVALID_ARGUMENT;
+    if (rows == 0 || cols == 0)
+        return GNSS_INVALID_ARGUMENT;
+
     for (size_t i = 0; i < rows; i++)
         for (size_t j = 0; j < cols; j++)
             R[i][j] = A[i][j];
@@ -107,6 +133,11 @@ GnssStatus matrix_identity(
     double R[n][n],
     double val)
 {
+    if (!R)
+        return GNSS_INVALID_ARGUMENT;
+    if (n == 0)
+        return GNSS_INVALID_ARGUMENT;
+
     for (size_t i = 0; i < n; i++)
         for (size_t j = 0; j < n; j++)
         {
@@ -125,6 +156,11 @@ GnssStatus matrix_solve(
     double b[n],
     double x[n])
 {
+    if (!A || !b || !x)
+        return GNSS_INVALID_ARGUMENT;
+    if (n == 0)
+        return GNSS_INVALID_ARGUMENT;
+
     double M[n][n + 1];
 
     for (size_t i = 0; i < n; i++)
@@ -203,6 +239,11 @@ GnssStatus matrix_inverse(
     double A[n][n],
     double inverse[n][n])
 {
+    if (!A || !inverse)
+        return GNSS_INVALID_ARGUMENT;
+    if (n == 0)
+        return GNSS_INVALID_ARGUMENT;
+
     for (size_t col = 0; col < n; col++)
     {
         double b[n];
@@ -231,6 +272,8 @@ GnssStatus matrix_square_submatrix(
     size_t sub_n,
     double sub[sub_n][sub_n])
 {
+    if (!A || !sub)
+        return GNSS_INVALID_ARGUMENT;
     if (sub_n == 0 || sub_n > n)
         return GNSS_INVALID_ARGUMENT;
 
@@ -250,6 +293,9 @@ GnssStatus vector_copy(
     double x[n],
     double y[n])
 {
+    if (!x || !y)
+        return GNSS_INVALID_ARGUMENT;
+
     for (size_t i = 0; i < n; i++)
         y[i] = x[i];
 

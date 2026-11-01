@@ -18,7 +18,7 @@ TARGET = $(BUILD_DIR)/gnss_poc
 SRC = $(CODE_SRC) src/main.c 
 
 TEST_TARGET = $(BUILD_DIR)/gnss_poc_test
-TEST_SRC = $(CODE_SRC) test/src/test.c test/src/test_physical_types.c
+TEST_SRC = $(CODE_SRC) test/src/*.c
 
 all: $(TARGET)
 
