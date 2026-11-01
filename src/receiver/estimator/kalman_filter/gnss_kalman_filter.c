@@ -4,8 +4,8 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "gnss_math.h"
 #include "gnss_kalman_filter_internal.h"
+#include "math/gnss_math_matrix.h"
 #include "receiver/estimator/kalman_filter/gnss_kalman_filter_types.h"
 
 struct GnssKalmanFilter

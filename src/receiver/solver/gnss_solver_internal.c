@@ -7,7 +7,8 @@
 
 #include "gnss_types.h"
 #include "simulation/gnss_simulation.h"
-#include "gnss_math.h"
+#include "math/gnss_math.h"
+#include "math/gnss_math_matrix.h"
 #include "receiver/gnss_receiver.h"
 
 typedef struct
@@ -53,6 +54,13 @@ void gnss_solver_internal_free(GnssSolverInternal *solver)
 {
     free(solver->satellite_contexts);
     free(solver);
+}
+
+double compute_residue(
+    double measurement,
+    double estimated_pseudorange)
+{
+    return measurement - estimated_pseudorange;
 }
 
 void gnss_solver_internal_update_observations(GnssSolverInternal *solver, const GnssMeasurement *measurements, size_t satellite_count)

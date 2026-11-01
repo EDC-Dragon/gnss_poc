@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "gnss_math.h"
+#include "math/gnss_math.h"
 #include "receiver/estimator/kalman_filter/gnss_kalman_filter.h"
 
 struct GnssStateEstimator

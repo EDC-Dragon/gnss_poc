@@ -4,7 +4,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "gnss_math.h"
+#include "math/gnss_math_matrix.h"
 
 struct GnssKalmanFilterInternal
 {

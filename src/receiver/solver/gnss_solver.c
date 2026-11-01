@@ -7,7 +7,7 @@
 
 #include "gnss_types.h"
 #include "simulation/gnss_simulation.h"
-#include "gnss_math.h"
+#include "math/gnss_math_noise.h"
 #include "receiver/gnss_receiver.h"
 
 #include "gnss_solver_internal.h"

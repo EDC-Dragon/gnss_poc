@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #include "gnss_types.h"
-#include "gnss_math.h"
+#include "math/gnss_math_noise.h"
 #include "satellite/gnss_satellite.h"
 #include "receiver/gnss_receiver.h"
 #include "receiver/solver/gnss_solver.h"
