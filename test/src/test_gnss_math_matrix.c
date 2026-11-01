@@ -179,7 +179,7 @@ static void test_matrix_multiply()
     assert_near(C[1][0], 0.0);
 }
 
-void test_matrix_maths()
+void test_gnss_math_matrix()
 {
     test_matrix_solve();
     test_matrix_solve_pivot();

@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "test_physical_types.h"
 #include "test_gnss_math_matrix.h"
+#include "test_gnss_math_gnss.h"
+#include "test_gnss_simulation.h"
 
 int main(int argc, char *argv[])
 {
@@ -14,13 +15,17 @@ int main(int argc, char *argv[])
     else
     {
         printf("Argument: %s\n", argv[1]);
-        if (strcmp(argv[1], "physical_types") == 0)
+        if (strcmp(argv[1], "math_gnss") == 0)
         {
-            test_physical_types();
+            test_gnss_math_gnss();
         }
         else if (strcmp(argv[1], "math_matrix") == 0)
         {
-            test_matrix_maths();
+            test_gnss_math_matrix();
+        }
+        else if (strcmp(argv[1], "sim") == 0)
+        {
+            test_gnss_sim();
         }
     }
     return 0;

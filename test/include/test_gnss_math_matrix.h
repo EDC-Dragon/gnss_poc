@@ -1,3 +1,3 @@
 #pragma once
 
-void test_matrix_maths();
+void test_gnss_math_matrix();
