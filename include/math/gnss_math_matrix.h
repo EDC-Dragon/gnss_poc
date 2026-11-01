@@ -18,6 +18,13 @@ GnssStatus vector_matrix_multiply(
     double A[rows][cols],
     double y[cols]);
 
+GnssStatus matrix_multiply(
+    size_t rows,
+    size_t cols,
+    double A[rows][cols],
+    double B[cols][cols],
+    double R[rows][cols]);
+
 GnssStatus matrix_xmtx(
     size_t rows_x,
     size_t cols_x,

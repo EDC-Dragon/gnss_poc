@@ -16,6 +16,7 @@ static void assert_near(double actual, double expected)
 
 static void test_matrix_solve()
 {
+    printf("Testing matrix_solve\n");
     // 2x + y = 5
     // x + 3y = 7
     // Solution : x = 1.6, y = 1.8
@@ -41,6 +42,7 @@ static void test_matrix_solve()
 
 static void test_matrix_solve_pivot()
 {
+    printf("Testing matrix_solve_pivot\n");
     // Nécessite une permutation des lignes.
     double A[2][2] = {
         {0.0, 1.0},
@@ -57,6 +59,7 @@ static void test_matrix_solve_pivot()
 
 static void test_matrix_solve_singular()
 {
+    printf("Testing matrix_solve_singular\n");
     // Lignes linéairement dépendantes.
     double A[2][2] = {
         {1.0, 2.0},
@@ -70,6 +73,7 @@ static void test_matrix_solve_singular()
 
 static void test_matrix_xmtx()
 {
+    printf("Testing matrix_xmtx\n");
     // R = X * M * X^T
 
     double X[2][2] = {
@@ -96,6 +100,7 @@ static void test_matrix_xmtx()
 
 static void test_matrix_square_submatrix()
 {
+    printf("Testing matrix_square_submatrix\n");
     double A[4][4] = {
         {1, 2, 3, 4},
         {5, 6, 7, 8},
@@ -118,6 +123,8 @@ static void test_matrix_square_submatrix()
 
 static void test_matrix_square_submatrix_invalid()
 {
+    printf("Testing matrix_square_submatrix_invalid\n");
+
     double A[2][2] = {
         {1, 2},
         {3, 4}};
@@ -128,6 +135,50 @@ static void test_matrix_square_submatrix_invalid()
         matrix_square_submatrix(2, A, 3, sub) == GNSS_INVALID_ARGUMENT);
 }
 
+static void test_matrix_inverse()
+{
+    printf("Testing matrix_inverse\n");
+    double A[2][2] = {
+        {1, 2},
+        {3, 4}};
+
+    double inv[2][2] = {0};
+
+    assert(matrix_inverse(2, A, inv) == GNSS_OK);
+    assert_near(inv[0][0], -2.0);
+    assert_near(inv[0][1], 1.0);
+    assert_near(inv[1][0], 1.5);
+    assert_near(inv[1][1], -0.5);
+
+    double B[2][2] = {0};
+
+    assert(matrix_inverse(2, inv, B) == GNSS_OK);
+
+    for (int i = 0; i < 2; i++)
+        for (int j = 0; j < 2; j++)
+            assert_near(B[i][j], A[i][j]);
+}
+
+static void test_matrix_multiply()
+{
+    // CHeck that A * A' = I
+    printf("Testing matrix_multiply\n");
+    double A[2][2] = {
+        {1, 2},
+        {3, 4}};
+
+    double inv[2][2] = {0};
+
+    assert(matrix_inverse(2, A, inv) == GNSS_OK);
+
+    double C[2][2] = {0};
+    assert(matrix_multiply(2, 2, A, inv, C) == GNSS_OK);
+    assert_near(C[0][0], 1.0);
+    assert_near(C[1][1], 1.0);
+    assert_near(C[0][1], 0.0);
+    assert_near(C[1][0], 0.0);
+}
+
 void test_matrix_maths()
 {
     test_matrix_solve();
@@ -136,6 +187,8 @@ void test_matrix_maths()
     test_matrix_xmtx();
     test_matrix_square_submatrix();
     test_matrix_square_submatrix_invalid();
+    test_matrix_inverse();
+    test_matrix_multiply();
 
     printf("All GNSS math tests passed.\n");
 }

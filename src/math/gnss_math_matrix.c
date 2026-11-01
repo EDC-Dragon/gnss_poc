@@ -48,6 +48,27 @@ GnssStatus vector_matrix_multiply(
     return GNSS_OK;
 }
 
+GnssStatus matrix_multiply(
+    size_t rows,
+    size_t cols,
+    double A[rows][cols],
+    double B[cols][cols],
+    double R[rows][cols])
+{
+    if (!A || !B || !R)
+        return GNSS_INVALID_ARGUMENT;
+    if (rows == 0 || cols == 0)
+        return GNSS_INVALID_ARGUMENT;
+    for (size_t i = 0; i < rows; i++)
+        for (size_t j = 0; j < cols; j++)
+            R[i][j] = 0.0;
+    for (size_t i = 0; i < rows; i++)
+        for (size_t j = 0; j < cols; j++)
+            for (size_t k = 0; k < cols; k++)
+                R[i][j] += A[i][k] * B[k][j];
+
+    return GNSS_OK;
+}
 GnssStatus matrix_xmtx(
     size_t rows_x,
     size_t cols_x,
