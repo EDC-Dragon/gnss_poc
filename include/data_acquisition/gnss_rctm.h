@@ -1,12 +1,6 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 
-#define _POSIX_C_SOURCE 200112L
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netdb.h>
+void handle_rctm_frame(const uint8_t *rctm_payload, int payload_size);

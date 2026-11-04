@@ -11,6 +11,7 @@ CODE_SRC = src/*.c
 CODE_SRC += src/math/*.c
 CODE_SRC += src/satellite/*.c
 CODE_SRC += src/simulation/*.c
+CODE_SRC += src/data_acquisition/*.c
 CODE_SRC += src/receiver/*.c
 CODE_SRC += src/receiver/solver/*.c
 CODE_SRC += src/receiver/estimator/*.c

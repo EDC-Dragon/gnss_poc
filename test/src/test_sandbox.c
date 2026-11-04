@@ -4,73 +4,9 @@
 #include <string.h>
 #include <stdbool.h>
 #include "network/gnss_tcp.h"
+#include "data_acquisition/gnss_rctm.h"
+
 #include "gnss_types.h"
-
-uint64_t rtcm_get_bits(
-    const uint8_t *data,
-    size_t bit_offset,
-    size_t bit_count) // AI, to test
-{
-    uint64_t result = 0;
-    for (size_t i = 0; i < bit_count; i++)
-    {
-        size_t byte_offset = (bit_offset + i) / 8;
-        size_t bit_in_byte = 7 - ((bit_offset + i) % 8);
-        result <<= 1;
-        result |= (data[byte_offset] >> bit_in_byte) & 0x01;
-    }
-    return result;
-}
-
-int64_t rtcm_get_signed_bits(
-    const uint8_t *data,
-    size_t bit_offset,
-    size_t bit_count) // AI, to test
-{
-    if (bit_count == 0 || bit_count >= 64)
-        return 0;
-
-    uint64_t raw = rtcm_get_bits(data, bit_offset, bit_count);
-
-    if (raw & (UINT64_C(1) << (bit_count - 1)))
-        return (int64_t)raw - (int64_t)(UINT64_C(1) << bit_count);
-
-    return (int64_t)raw;
-}
-
-void handle_station_message(const uint8_t *payload, size_t payload_size)
-{
-    if (payload_size < 12)
-        return;
-    for (size_t i = 0; i < payload_size; i++)
-        printf("%02X ", payload[i]);
-
-    int64_t i = rtcm_get_signed_bits(payload, 12, 12);
-    int64_t x = rtcm_get_signed_bits(payload, 34, 38);
-    int64_t y = rtcm_get_signed_bits(payload, 74, 38);
-    int64_t z = rtcm_get_signed_bits(payload, 114, 38);
-    int64_t h = rtcm_get_signed_bits(payload, 152, 16);
-
-    Vec3 station_ecef = {x * 0.0001, y * 0.0001, z * 0.0001};
-
-    printf("i: %ld, x: %f, y: %f, z: %f, h: %ld\n", i, station_ecef.x, station_ecef.y, station_ecef.z, h);
-}
-
-void handle_rctm_frame(const uint8_t *rctm_payload, int payload_size)
-{
-    if (payload_size < 2)
-        return;
-
-    uint16_t message_type = rtcm_get_bits(rctm_payload, 0, 12);
-    printf("Handling RTCM payload of size %d and message type %d\n", payload_size, message_type);
-    switch (message_type)
-    {
-    case 1006:
-        printf("Handling message type Station ECEF\n");
-        handle_station_message(rctm_payload, payload_size);
-        break;
-    }
-}
 
 void test_tcp(void)
 {
