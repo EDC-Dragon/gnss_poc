@@ -4,6 +4,7 @@
 #include "test_gnss_math_matrix.h"
 #include "test_gnss_math_gnss.h"
 #include "test_gnss_simulation.h"
+#include "test_sandbox.h"
 
 int main(int argc, char *argv[])
 {
@@ -26,6 +27,10 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[1], "sim") == 0)
         {
             test_gnss_sim();
+        }
+        else if (strcmp(argv[1], "sandbox") == 0)
+        {
+            test_sandbox_function();
         }
     }
     return 0;

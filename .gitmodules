@@ -1,3 +1,6 @@
 [submodule "plugins/gnss_lib_py"]
 	path = plugins/gnss_lib_py
 	url = https://github.com/Stanford-NavLab/gnss_lib_py.git
+[submodule "plugins/tinycsocket"]
+	path = plugins/tinycsocket
+	url = https://github.com/dosshell/tinycsocket.git
