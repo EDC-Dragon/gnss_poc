@@ -25,11 +25,6 @@ void handle_station_message(const uint8_t *payload, size_t payload_size)
     printf("i: %ld, x: %f, y: %f, z: %f, h: %ld\n", i, station_ecef.x, station_ecef.y, station_ecef.z, h);
 }
 
-void handle_ephemeris_message(const uint8_t *payload, size_t payload_size)
-{
-    // TODO: Implement ephemeris message handling
-}
-
 typedef struct
 {
     uint8_t satellite_id;           // PRN GPS (1 à 64)
@@ -126,7 +121,7 @@ void handle_msm7_message(const uint8_t *payload, size_t payload_size) // Hard on
     offset += nsat * bit_count;
 
     for (size_t i = 0; i < nsat; i++)
-        printf("Satellite %zu: rough_range_ms=%u, extended_info=%u, rough_range_modulo=%u, rough_phase_range_rate=%d\n",
+        printf("Satellite %u: rough_range_ms=%u, extended_info=%u, rough_range_modulo=%u, rough_phase_range_rate=%d\n",
                satellites[i].satellite_id, satellites[i].rough_range_ms, satellites[i].extended_info,
                satellites[i].rough_range_modulo, satellites[i].rough_phase_range_rate);
 
