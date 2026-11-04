@@ -2,7 +2,13 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include "network/gnss_tcp.h"
+
+void handle_rctm_frame(const uint8_t *frame, int frame_size)
+{
+    printf("Handling RTCM frame of size %d\n", frame_size);
+}
 
 void test_tcp(void)
 {
@@ -10,16 +16,16 @@ void test_tcp(void)
     if (!tcp)
         return;
 
-    if (gnss_tcp_connect(tcp, "example.com", 80) != 0)
+    if (gnss_tcp_connect(tcp, "crtk.net", 2101) != 0)
     {
         gnss_tcp_destroy(tcp);
         return;
     }
 
     const char *request =
-        "GET / HTTP/1.1\r\n"
-        "Host: example.com\r\n"
-        "Connection: close\r\n"
+        "GET /SAOG HTTP/1.0\r\n"
+        "Host: crtk.net\r\n"
+        "User-Agent: NTRIP gnss_poc/0.1\r\n"
         "\r\n";
 
     if (gnss_tcp_write(tcp,
@@ -30,14 +36,82 @@ void test_tcp(void)
         return;
     }
 
-    uint8_t buffer[4096];
-    size_t received = 0;
+    uint8_t current_frame[4096];
+    int current_frame_size = 0;
+    int expected_frame_size = 0;
 
-    if (gnss_tcp_read(tcp, buffer,
-                      sizeof(buffer), &received) == 0)
+    uint8_t buffer[4096];
+    size_t received;
+
+    while (gnss_tcp_read(tcp, buffer, sizeof(buffer), &received) == 0)
     {
+        if (received == 0)
+            break;
+
         printf("Received %zu bytes\n", received);
-        fwrite(buffer, 1, received, stdout);
+
+        for (size_t i = 0; i < received && i < 16; i++)
+            printf("%02X ", buffer[i]);
+        printf("\n");
+
+        for (size_t current_index = 0; current_index < received; current_index++)
+        {
+            // TODO protect against header, works ATM
+            if (current_frame_size == 0)
+            {
+                if (buffer[current_index] == 0xD3)
+                {
+                    current_frame[current_frame_size] = buffer[current_index];
+                    current_frame_size = 1; // Eh
+                    printf("First byte 0xD3 found at position %zu\n", current_index);
+                }
+            }
+            else
+            {
+                current_frame[current_frame_size] = buffer[current_index];
+                current_frame_size++;
+                if (4096 <= current_frame_size) // Frame is too long
+                {
+                    printf("Frame exceeded buffer size, resetting\n");
+                    current_frame_size = 0;
+                    expected_frame_size = 0;
+                }
+                if (expected_frame_size == 0) // Frame payload length not yet determined
+                {
+                    if (current_frame_size == 3) // Frame payload length can be determined now
+                    {
+                        int current_payload_length = ((current_frame[1] & 0x03) << 8) | current_frame[2];
+                        expected_frame_size = 3 + current_payload_length + 3;
+                        printf(" Expected frame size set to %d\n", expected_frame_size);
+                        printf(" Current payload length set to %d\n", current_payload_length);
+                    }
+                    else if (3 < current_frame_size) // Error: payload length should have been determined by now (++)
+                    {
+                        printf("Error in payload length\n\n");
+                        current_frame_size = 0;
+                        expected_frame_size = 0;
+                    }
+                }
+                else // Frame payload length has been determined
+                {
+                    if (expected_frame_size == current_frame_size) // Frame complete
+                    {
+                        printf("Complete frame received, size: %d\n\n", current_frame_size);
+                        handle_rctm_frame(current_frame, current_frame_size);
+                        current_frame_size = 0;
+                        expected_frame_size = 0;
+                        // TODO Add CRC check for the frame
+                    }
+                    else if (expected_frame_size < current_frame_size)
+                    {
+                        printf("Error: frame size exceeded expected size\n"); // Frame is too long
+                        current_frame_size = 0;
+                        expected_frame_size = 0;
+                    }
+                }
+            }
+        }
+
         printf("\n");
     }
 
