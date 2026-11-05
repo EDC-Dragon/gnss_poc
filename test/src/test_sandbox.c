@@ -6,69 +6,65 @@
 #include "network/gnss_tcp.h"
 #include "data_acquisition/gnss_rtcm_decoder.h"
 #include "receiver/gnss_receiver.h"
+#include "data_acquisition/gnss_rtcm_tcp_receiver.h"
 
 #include "gnss_types.h"
 
-void test_rtcm_positioning(RTCMFrameDecoder *decoder)
+void test_sandbox_function()
 {
+    // Receiver
+    GnssReceiver *receiver = gnss_receiver_create(64);
+    gnss_receiver_initialize(receiver);
 
-    GnssTcp *tcp = gnss_tcp_create();
-    if (!tcp)
+    // Communication
+    GnssRtcmTcpReceiver *tcp_receiver = gnss_rtcm_tcp_receiver_create();
+    if (!tcp_receiver)
         return;
 
-    if (gnss_tcp_connect(tcp, "crtk.net", 2101) != 0)
-    {
-        gnss_tcp_destroy(tcp);
+    if (!gnss_rtcm_tcp_receiver_connect(tcp_receiver, "crtk.net", 2101, "SAOG"))
         return;
-    }
 
-    const char *request =
-        "GET /SAOG HTTP/1.0\r\n"
-        "Host: crtk.net\r\n"
-        "User-Agent: NTRIP gnss_poc/0.1\r\n"
-        "\r\n";
-
-    if (gnss_tcp_write(tcp,
-                       (const uint8_t *)request,
-                       strlen(request)) != 0)
-    {
-        gnss_tcp_destroy(tcp);
-        return;
-    }
+    // Decoder
+    RTCMFrameDecoder *decoder = rtcm_frame_decoder_create();
 
     uint8_t buffer[4096];
     size_t received;
 
-    bool verbose = false;
-
-    while (gnss_tcp_read(tcp, buffer, sizeof(buffer), &received) == 0)
+    for (int i = 0; i < 100; i++)
     {
-        if (received == 0)
+        if (gnss_rtcm_tcp_receiver_read(tcp_receiver, buffer, sizeof(buffer), &received) == false)
             break;
 
-        if (verbose)
-        {
-            printf("Received %zu bytes\n", received);
-            for (size_t i = 0; i < received && i < 16; i++)
-                printf("%02X ", buffer[i]);
-            printf("\n");
-        }
+        printf("Received %zu bytes\n", received);
 
-        rtcm_frame_decoder_feed(decoder, buffer, received, verbose);
+        rtcm_frame_decoder_feed(decoder, buffer, received, false);
+
+        RTCMDecodedMessage *message = rtcm_frame_decoder_dequeue(decoder);
+        while (message != NULL)
+        {
+            switch (message->type)
+            {
+            case RTCM_TYPE_STATION:
+                printf("Received RTCM message type STATION\n");
+                break;
+            case RTCM_TYPE_MSM7:
+                printf("Received RTCM message type MSM\n");
+                break;
+            default:
+                printf("Received RTCM message type %d\n", message->type);
+                break;
+            }
+            message = rtcm_frame_decoder_dequeue(decoder);
+        }
     }
 
-    gnss_tcp_destroy(tcp);
-}
-
-void test_sandbox_function()
-{
-    GnssReceiver *receiver = gnss_receiver_create(64);
-    gnss_receiver_initialize(receiver);
-
-    RTCMFrameDecoder *decoder = rtcm_frame_decoder_create();
-
-    test_rtcm_positioning(decoder);
-
+    // Free decoder
     rtcm_frame_decoder_free(decoder);
+
+    // Free communication
+    gnss_rtcm_tcp_receiver_disconnect(tcp_receiver);
+    gnss_rtcm_tcp_receiver_free(tcp_receiver);
+
+    // Free receiver
     gnss_receiver_free(receiver);
 }

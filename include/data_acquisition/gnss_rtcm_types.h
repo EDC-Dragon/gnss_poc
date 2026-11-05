@@ -20,7 +20,7 @@ typedef struct
 
 typedef struct
 {
-
+    int place_holder;
 } RTCMMSM7Message;
 
 typedef struct
