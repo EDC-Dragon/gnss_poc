@@ -1,16 +1,16 @@
-#include "data_acquisition/gnss_rctm.h"
+#include "data_acquisition/gnss_rtcm_internal.h"
 
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
 
 #include "gnss_types.h"
-#include "data_acquisition/gnss_rctm_tools.h"
+#include "data_acquisition/gnss_rtcm_tools.h"
 
-void handle_station_message(const uint8_t *payload, size_t payload_size)
+RTCMDecodedMessage handle_station_message(const uint8_t *payload, size_t payload_size)
 {
     if (payload_size < 12)
-        return;
+        return (RTCMDecodedMessage){.type = RTCM_TYPE_UNKNOWN};
     for (size_t i = 0; i < payload_size; i++)
         printf("%02X ", payload[i]);
 
@@ -23,6 +23,11 @@ void handle_station_message(const uint8_t *payload, size_t payload_size)
     Vec3 station_ecef = {x * 0.0001, y * 0.0001, z * 0.0001};
 
     printf("i: %ld, x: %f, y: %f, z: %f, h: %ld\n", i, station_ecef.x, station_ecef.y, station_ecef.z, h);
+    return (RTCMDecodedMessage){
+        .type = RTCM_TYPE_STATION,
+        .data.station = {
+            .station_id = i,
+            .station_ecef = station_ecef}};
 }
 
 typedef struct
@@ -60,7 +65,7 @@ double msm7_pseudorange_m(
             (double)cell->fine_pseudorange / 536870912.0);
 }
 
-void handle_msm7_message(const uint8_t *payload, size_t payload_size) // Hard one =O
+RTCMDecodedMessage handle_msm7_message(const uint8_t *payload, size_t payload_size) // Hard one =O
 {
     // add a description of the frame
     uint64_t satellite_mask = rtcm_get_bits(payload, 73, 64);
@@ -199,24 +204,26 @@ void handle_msm7_message(const uint8_t *payload, size_t payload_size) // Hard on
                    sat->satellite_id, sig + 1, pseudorange_m);
         }
     }
+    return (RTCMDecodedMessage){.type = RTCM_TYPE_MSM7};
 }
 
-void handle_rctm_frame(const uint8_t *rctm_payload, int payload_size)
+RTCMDecodedMessage handle_rtcm_frame(const uint8_t *rtcm_payload, int payload_size)
 {
     if (payload_size < 2)
-        return;
+        return (RTCMDecodedMessage){.type = RTCM_TYPE_UNKNOWN};
 
-    uint16_t message_type = rtcm_get_bits(rctm_payload, 0, 12);
+    uint16_t message_type = rtcm_get_bits(rtcm_payload, 0, 12);
     printf("Handling RTCM payload of size %d and message type %d\n", payload_size, message_type);
     switch (message_type)
     {
     case 1006:
         printf("Handling message type Station ECEF\n");
-        handle_station_message(rctm_payload, payload_size);
+        return handle_station_message(rtcm_payload, payload_size);
         break;
     case 1077:
         printf("Handling message type MSM7\n");
-        handle_msm7_message(rctm_payload, payload_size);
+        return handle_msm7_message(rtcm_payload, payload_size);
         break;
     }
+    return (RTCMDecodedMessage){.type = RTCM_TYPE_UNKNOWN};
 }

@@ -4,12 +4,12 @@
 #include <string.h>
 #include <stdbool.h>
 #include "network/gnss_tcp.h"
-#include "data_acquisition/gnss_rctm.h"
-#include "data_acquisition/gnss_rctm_decoder.h"
+#include "data_acquisition/gnss_rtcm_decoder.h"
+#include "receiver/gnss_receiver.h"
 
 #include "gnss_types.h"
 
-void test_tcp(RCTMFrameDecoder *decoder)
+void test_rtcm_positioning(RTCMFrameDecoder *decoder)
 {
 
     GnssTcp *tcp = gnss_tcp_create();
@@ -54,7 +54,7 @@ void test_tcp(RCTMFrameDecoder *decoder)
             printf("\n");
         }
 
-        rctm_frame_decoder_feed(decoder, buffer, received, verbose);
+        rtcm_frame_decoder_feed(decoder, buffer, received, verbose);
     }
 
     gnss_tcp_destroy(tcp);
@@ -62,7 +62,13 @@ void test_tcp(RCTMFrameDecoder *decoder)
 
 void test_sandbox_function()
 {
-    RCTMFrameDecoder *decoder = rctm_frame_decoder_create();
-    test_tcp(decoder);
-    rctm_frame_decoder_free(decoder);
+    GnssReceiver *receiver = gnss_receiver_create(64);
+    gnss_receiver_initialize(receiver);
+
+    RTCMFrameDecoder *decoder = rtcm_frame_decoder_create();
+
+    test_rtcm_positioning(decoder);
+
+    rtcm_frame_decoder_free(decoder);
+    gnss_receiver_free(receiver);
 }
