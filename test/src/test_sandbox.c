@@ -55,6 +55,9 @@ void test_sandbox_function()
             {
             case RTCM_TYPE_STATION:
                 // printf("Received RTCM message type STATION\n");
+                printf("Received RTCM message type STATION\n");
+                printf("Station ID: %ld\n", message->data.station.station_id);
+                printf("Station ECEF: x=%f, y=%f, z=%f\n", message->data.station.station_ecef.x, message->data.station.station_ecef.y, message->data.station.station_ecef.z);
                 break;
             case RTCM_TYPE_MSM7:
                 // printf("Received RTCM message type MSM\n");

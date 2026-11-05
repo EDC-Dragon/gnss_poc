@@ -110,8 +110,10 @@ RTCMDecodedMessage handle_msm7_message(const uint8_t *payload, size_t payload_si
     {
         size_t local_nsat = 0;
         for (size_t i = 0; i < 64; i++)
-            if ((satellite_mask >> i) & 1U)
-                satellites[local_nsat++].satellite_id = 63 - i; // reverse order apparently
+        {
+            if ((satellite_mask >> (63 - i)) & 1U)
+                satellites[local_nsat++].satellite_id = i + 1;
+        }
     }
 
     bit_count = 8;
