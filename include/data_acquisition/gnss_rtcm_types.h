@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "gnss_types.h"
+#include "satellite/gnss_satellite_types.h"
 
 typedef enum
 {
@@ -49,45 +50,7 @@ typedef struct
 {
     // Identification
     uint8_t satellite_id;
-    uint16_t gps_week;
-    uint8_t ura;
-    uint8_t l2_code;
-
-    // Horloge satellite
-    double toc_s;
-    double af0_s;
-    double af1_s_per_s;
-    double af2_s_per_s2;
-    double tgd_s;
-
-    // Paramètres orbitaux
-    double toe_s;
-    double sqrt_a_sqrt_m;
-    double eccentricity;
-    double m0_rad;
-    double delta_n_rad_s;
-    double idot_rad_s;
-
-    double omega0_rad;
-    double i0_rad;
-    double omega_rad;
-    double omega_dot_rad_s;
-
-    // Corrections harmoniques
-    double crs_m;
-    double crc_m;
-    double cuc_rad;
-    double cus_rad;
-    double cic_rad;
-    double cis_rad;
-
-    // État des éphémérides
-    uint8_t iode;
-    uint16_t iodc;
-    uint8_t sv_health;
-    bool l2_p_flag;
-    bool fit_interval;
-
+    GnssGpsEphemeris ephemeris;
 } RTCMEphemerisMessage;
 
 typedef struct

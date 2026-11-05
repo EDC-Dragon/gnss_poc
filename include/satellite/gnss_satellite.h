@@ -1,9 +1,11 @@
 #pragma once
 
-#include "gnss_types.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+
+#include "gnss_types.h"
+#include "satellite/gnss_satellite_types.h"
 
 typedef struct
 {
@@ -14,7 +16,13 @@ typedef struct
 typedef struct
 {
     SatelliteId id;
+
+    bool has_ephemeris;
+    GnssGpsEphemeris ephemeris;
+
     Vec3 position;
     double time_s;
+
     SatelliteErrorModel error_model;
+
 } Satellite;

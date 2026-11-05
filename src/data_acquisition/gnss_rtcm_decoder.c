@@ -75,7 +75,7 @@ void rtcm_frame_decoder_feed(RTCMFrameDecoder *decoder, const uint8_t *data, siz
                     // printf("Complete frame received, size: %d\n\n", current_frame_size);
                     if (decoder->message_count < RTCM_MAX_MESSAGES)
                     {
-                        RTCMDecodedMessage msg = handle_rtcm_frame(decoder->current_frame + 3, decoder->current_frame_size - 6);
+                        RTCMDecodedMessage msg = handle_rtcm_frame(decoder->current_frame + 3, decoder->current_frame_size - 6, verbose);
                         if (msg.type != RTCM_TYPE_UNKNOWN)
                             decoder->messages[decoder->message_count++] = msg;
                     }

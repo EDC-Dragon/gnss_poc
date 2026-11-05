@@ -7,12 +7,13 @@
 #include "gnss_types.h"
 #include "data_acquisition/gnss_rtcm_tools.h"
 
-RTCMDecodedMessage handle_station_message(const uint8_t *payload, size_t payload_size)
+RTCMDecodedMessage handle_station_message(const uint8_t *payload, size_t payload_size, bool verbose)
 {
     if (payload_size < 12)
         return (RTCMDecodedMessage){.type = RTCM_TYPE_UNKNOWN};
-    for (size_t i = 0; i < payload_size; i++)
-        printf("%02X ", payload[i]);
+    if (verbose)
+        for (size_t i = 0; i < payload_size; i++)
+            printf("%02X ", payload[i]);
 
     int64_t i = rtcm_get_signed_bits(payload, 12, 12);
     int64_t x = rtcm_get_signed_bits(payload, 34, 38);
@@ -22,7 +23,9 @@ RTCMDecodedMessage handle_station_message(const uint8_t *payload, size_t payload
 
     Vec3 station_ecef = {x * 0.0001, y * 0.0001, z * 0.0001};
 
-    printf("i: %ld, x: %f, y: %f, z: %f, h: %ld\n", i, station_ecef.x, station_ecef.y, station_ecef.z, h);
+    if (verbose)
+        printf("i: %ld, x: %f, y: %f, z: %f, h: %ld\n", i, station_ecef.x, station_ecef.y, station_ecef.z, h);
+
     return (RTCMDecodedMessage){
         .type = RTCM_TYPE_STATION,
         .data.station = {
@@ -65,9 +68,8 @@ double msm7_pseudorange_m(
             (double)cell->fine_pseudorange / 536870912.0);
 }
 
-RTCMDecodedMessage handle_msm7_message(const uint8_t *payload, size_t payload_size) // Hard one =O
+RTCMDecodedMessage handle_msm7_message(const uint8_t *payload, size_t payload_size, bool verbose) // Hard one =O
 {
-    bool verbose = false;
 
     RTCMDecodedMessage result = {
         .type = RTCM_TYPE_MSM7};
@@ -232,7 +234,7 @@ RTCMDecodedMessage handle_msm7_message(const uint8_t *payload, size_t payload_si
     return result;
 }
 
-RTCMDecodedMessage handle_ephemeris_message(const uint8_t *rtcm_payload, int payload_size)
+RTCMDecodedMessage handle_ephemeris_message(const uint8_t *rtcm_payload, int payload_size, bool verbose)
 {
     RTCMDecodedMessage result = {
         .type = RTCM_TYPE_UNKNOWN};
@@ -251,79 +253,86 @@ RTCMDecodedMessage handle_ephemeris_message(const uint8_t *rtcm_payload, int pay
 
     // Identification satellite
     eph->satellite_id = rtcm_get_bits(rtcm_payload, 12, 6);
-    eph->gps_week = rtcm_get_bits(rtcm_payload, 18, 10);
-    eph->ura = rtcm_get_bits(rtcm_payload, 28, 4);
-    eph->l2_code = rtcm_get_bits(rtcm_payload, 32, 2);
+    eph->ephemeris.gps_week = rtcm_get_bits(rtcm_payload, 18, 10);
+    // uint8_t ura = rtcm_get_bits(rtcm_payload, 28, 4);
+    // uint8_t l2_code = rtcm_get_bits(rtcm_payload, 32, 2);
 
     // Paramètres d'horloge et indices
-    eph->idot_rad_s = rtcm_get_signed_bits(rtcm_payload, 34, 14) * 0x1p-43 * GPS_PI;
-    eph->iode = rtcm_get_bits(rtcm_payload, 48, 8);
+    eph->ephemeris.idot_rad_s = rtcm_get_signed_bits(rtcm_payload, 34, 14) * 0x1p-43 * GPS_PI;
+    eph->ephemeris.iode = rtcm_get_bits(rtcm_payload, 48, 8);
 
-    eph->toc_s = rtcm_get_bits(rtcm_payload, 56, 16) * 16.0;
-    eph->af2_s_per_s2 = rtcm_get_signed_bits(rtcm_payload, 72, 8) * 0x1p-55;
-    eph->af1_s_per_s = rtcm_get_signed_bits(rtcm_payload, 80, 16) * 0x1p-43;
-    eph->af0_s = rtcm_get_signed_bits(rtcm_payload, 96, 22) * 0x1p-31;
+    eph->ephemeris.toc_s = rtcm_get_bits(rtcm_payload, 56, 16) * 16.0;
+    eph->ephemeris.af2_s_per_s2 = rtcm_get_signed_bits(rtcm_payload, 72, 8) * 0x1p-55;
+    eph->ephemeris.af1_s_per_s = rtcm_get_signed_bits(rtcm_payload, 80, 16) * 0x1p-43;
+    eph->ephemeris.af0_s = rtcm_get_signed_bits(rtcm_payload, 96, 22) * 0x1p-31;
 
-    eph->iodc = rtcm_get_bits(rtcm_payload, 118, 10);
+    eph->ephemeris.iodc = rtcm_get_bits(rtcm_payload, 118, 10);
 
     // Paramètres orbitaux
-    eph->crs_m = rtcm_get_signed_bits(rtcm_payload, 128, 16) * 0x1p-5;
-    eph->delta_n_rad_s = rtcm_get_signed_bits(rtcm_payload, 144, 16) * 0x1p-43 * GPS_PI;
-    eph->m0_rad = rtcm_get_signed_bits(rtcm_payload, 160, 32) * 0x1p-31 * GPS_PI;
-    eph->cuc_rad = rtcm_get_signed_bits(rtcm_payload, 192, 16) * 0x1p-29;
+    eph->ephemeris.crs_m = rtcm_get_signed_bits(rtcm_payload, 128, 16) * 0x1p-5;
+    eph->ephemeris.delta_n_rad_s = rtcm_get_signed_bits(rtcm_payload, 144, 16) * 0x1p-43 * GPS_PI;
+    eph->ephemeris.m0_rad = rtcm_get_signed_bits(rtcm_payload, 160, 32) * 0x1p-31 * GPS_PI;
+    eph->ephemeris.cuc_rad = rtcm_get_signed_bits(rtcm_payload, 192, 16) * 0x1p-29;
 
-    eph->eccentricity = rtcm_get_bits(rtcm_payload, 208, 32) * 0x1p-33;
+    eph->ephemeris.eccentricity = rtcm_get_bits(rtcm_payload, 208, 32) * 0x1p-33;
 
-    eph->cus_rad = rtcm_get_signed_bits(rtcm_payload, 240, 16) * 0x1p-29;
-    eph->sqrt_a_sqrt_m = rtcm_get_bits(rtcm_payload, 256, 32) * 0x1p-19;
-    eph->toe_s = rtcm_get_bits(rtcm_payload, 288, 16) * 16.0;
+    eph->ephemeris.cus_rad = rtcm_get_signed_bits(rtcm_payload, 240, 16) * 0x1p-29;
+    eph->ephemeris.sqrt_a_sqrt_m = rtcm_get_bits(rtcm_payload, 256, 32) * 0x1p-19;
+    eph->ephemeris.toe_s = rtcm_get_bits(rtcm_payload, 288, 16) * 16.0;
 
-    eph->cic_rad = rtcm_get_signed_bits(rtcm_payload, 304, 16) * 0x1p-29;
-    eph->omega0_rad = rtcm_get_signed_bits(rtcm_payload, 320, 32) * 0x1p-31 * GPS_PI;
-    eph->cis_rad = rtcm_get_signed_bits(rtcm_payload, 352, 16) * 0x1p-29;
-    eph->i0_rad = rtcm_get_signed_bits(rtcm_payload, 368, 32) * 0x1p-31 * GPS_PI;
-    eph->crc_m = rtcm_get_signed_bits(rtcm_payload, 400, 16) * 0x1p-5;
-    eph->omega_rad = rtcm_get_signed_bits(rtcm_payload, 416, 32) * 0x1p-31 * GPS_PI;
+    eph->ephemeris.cic_rad = rtcm_get_signed_bits(rtcm_payload, 304, 16) * 0x1p-29;
+    eph->ephemeris.omega0_rad = rtcm_get_signed_bits(rtcm_payload, 320, 32) * 0x1p-31 * GPS_PI;
+    eph->ephemeris.cis_rad = rtcm_get_signed_bits(rtcm_payload, 352, 16) * 0x1p-29;
+    eph->ephemeris.i0_rad = rtcm_get_signed_bits(rtcm_payload, 368, 32) * 0x1p-31 * GPS_PI;
+    eph->ephemeris.crc_m = rtcm_get_signed_bits(rtcm_payload, 400, 16) * 0x1p-5;
+    eph->ephemeris.omega_rad = rtcm_get_signed_bits(rtcm_payload, 416, 32) * 0x1p-31 * GPS_PI;
 
-    eph->omega_dot_rad_s = rtcm_get_signed_bits(rtcm_payload, 448, 24) * 0x1p-43 * GPS_PI;
+    eph->ephemeris.omega_dot_rad_s = rtcm_get_signed_bits(rtcm_payload, 448, 24) * 0x1p-43 * GPS_PI;
 
     // État satellite
-    eph->tgd_s = rtcm_get_signed_bits(rtcm_payload, 472, 8) * 0x1p-31;
-    eph->sv_health = rtcm_get_bits(rtcm_payload, 480, 6);
-    eph->l2_p_flag = rtcm_get_bits(rtcm_payload, 486, 1);
-    eph->fit_interval = rtcm_get_bits(rtcm_payload, 487, 1);
+    eph->ephemeris.tgd_s = rtcm_get_signed_bits(rtcm_payload, 472, 8) * 0x1p-31;
+    eph->ephemeris.sv_health = rtcm_get_bits(rtcm_payload, 480, 6);
+    // bool l2_p_flag = rtcm_get_bits(rtcm_payload, 486, 1);
+    // bool fit_interval = rtcm_get_bits(rtcm_payload, 487, 1);
 
     // Debug
-    printf("GPS PRN: %u\n", eph->satellite_id);
-    printf("GPS week (10 bits): %u\n", eph->gps_week);
-    printf("IODE: %u\n", eph->iode);
-    printf("Toe: %.0f s\n", eph->toe_s);
-    printf("sqrtA: %.6f sqrt(m)\n", eph->sqrt_a_sqrt_m);
-    printf("Semi-major axis: %.3f km\n",
-           eph->sqrt_a_sqrt_m * eph->sqrt_a_sqrt_m / 1000.0);
-    printf("Eccentricity: %.9f\n", eph->eccentricity);
+    if (verbose)
+    {
+        printf("GPS PRN: %u\n", eph->satellite_id);
+        printf("GPS week (10 bits): %u\n", eph->ephemeris.gps_week);
+        printf("IODE: %u\n", eph->ephemeris.iode);
+        printf("Toe: %.0f s\n", eph->ephemeris.toe_s);
+        printf("sqrtA: %.6f sqrt(m)\n", eph->ephemeris.sqrt_a_sqrt_m);
+        printf("Semi-major axis: %.3f km\n",
+               eph->ephemeris.sqrt_a_sqrt_m * eph->ephemeris.sqrt_a_sqrt_m / 1000.0);
+        printf("Eccentricity: %.9f\n", eph->ephemeris.eccentricity);
+    }
 
     return result;
 }
 
-RTCMDecodedMessage handle_rtcm_frame(const uint8_t *rtcm_payload, int payload_size)
+RTCMDecodedMessage handle_rtcm_frame(const uint8_t *rtcm_payload, int payload_size, bool verbose)
 {
     if (payload_size < 2)
         return (RTCMDecodedMessage){.type = RTCM_TYPE_UNKNOWN};
 
     uint16_t message_type = rtcm_get_bits(rtcm_payload, 0, 12);
-    printf("Handling RTCM payload of size %d and message type %d\n", payload_size, message_type);
+    if (verbose)
+        printf("Handling RTCM payload of size %d and message type %d\n", payload_size, message_type);
     switch (message_type)
     {
     case 1006:
-        // printf("Handling message type Station ECEF\n");
-        return handle_station_message(rtcm_payload, payload_size);
+        if (verbose)
+            printf("Handling message type Station ECEF\n");
+        return handle_station_message(rtcm_payload, payload_size, verbose);
     case 1077:
-        //  printf("Handling message type MSM7\n");
-        return handle_msm7_message(rtcm_payload, payload_size);
+        if (verbose)
+            printf("Handling message type MSM7\n");
+        return handle_msm7_message(rtcm_payload, payload_size, verbose);
     case 1019:
-        printf("Handling message type 1019\n");
-        return handle_ephemeris_message(rtcm_payload, payload_size);
+        if (verbose)
+            printf("Handling message type 1019\n");
+        return handle_ephemeris_message(rtcm_payload, payload_size, verbose);
     default:
         return (RTCMDecodedMessage){.type = RTCM_TYPE_UNKNOWN};
         break;
