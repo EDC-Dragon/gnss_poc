@@ -36,6 +36,11 @@ void test_sandbox_function()
     uint8_t buffer[4096];
     size_t received;
 
+    size_t max_measurements = 32;
+
+    GnssMeasurement measurements[max_measurements];
+    size_t measurement_count = 0;
+
     for (int i = 0; i < 100; i++)
     {
         if (gnss_rtcm_tcp_receiver_read(tcp_receiver, buffer, sizeof(buffer), &received) == false)
@@ -53,14 +58,43 @@ void test_sandbox_function()
                 break;
             case RTCM_TYPE_MSM7:
                 // printf("Received RTCM message type MSM\n");
-                if (0)
-                    for (size_t obs = 0; obs < message->data.msm7.observation_count; obs++)
+                double epoch_time_s = message->data.msm7.epoch_time_ms / 1000.0;
+                measurement_count = 0;
+
+                for (size_t obs = 0; obs < message->data.msm7.observation_count; obs++)
+                {
+                    RTCMMSM7Observation *observation = &message->data.msm7.observations[obs];
+                    Satellite *satellite = gnss_constellation_get_satellite(constellation, observation->satellite_id);
+                    if (satellite->has_ephemeris)
                     {
-                        RTCMMSM7Observation *observation = &message->data.msm7.observations[obs];
                         printf("Observation %zu: satellite_id=%u, signal_id=%u, pseudorange_m=%.3f, cnr_dbhz=%.3f\n",
                                obs, observation->satellite_id, observation->signal_id,
                                observation->pseudorange_m, observation->cnr_dbhz);
+
+                        double transmission_time_s = epoch_time_s - observation->pseudorange_m / 299792458.0;
+                        Vec3 satellite_position = gnss_gps_satellite_position(&satellite->ephemeris, transmission_time_s);
+                        printf("Satellite position: x=%.3f, y=%.3f, z=%.3f\n", satellite_position.x, satellite_position.y, satellite_position.z);
+
+                        GnssMeasurement measurement;
+                        measurement.status = GNSS_OK;
+                        measurement.satellite_id = observation->satellite_id;
+                        measurement.pseudorange_m = observation->pseudorange_m;
+                        measurement.sigma_m = 5.0;
+                        measurement.satellite_position = satellite_position;
+                        measurement.transmission_time_s = transmission_time_s;
+                        measurement.reception_time_s = epoch_time_s;
+                        measurement.availability_time_s = epoch_time_s;
+
+                        if (measurement_count < max_measurements)
+                            measurements[measurement_count++] = measurement;
                     }
+                }
+
+                if (3 < measurement_count) // arbitrary
+                {
+                    gnss_receiver_update(receiver, measurements, measurement_count, epoch_time_s);
+                }
+
                 break;
             case RTCM_TYPE_EPHEMERIS:
                 // printf("Received RTCM message type EPHEMERIS\n");
