@@ -67,6 +67,16 @@ double msm7_pseudorange_m(
 
 RTCMDecodedMessage handle_msm7_message(const uint8_t *payload, size_t payload_size) // Hard one =O
 {
+    bool verbose = false;
+
+    RTCMDecodedMessage result = {
+        .type = RTCM_TYPE_MSM7};
+
+    RTCMMSM7Message *msm7 = &result.data.msm7;
+
+    msm7->station_id = rtcm_get_bits(payload, 12, 12);
+    msm7->epoch_time_ms = rtcm_get_bits(payload, 24, 30);
+
     // add a description of the frame
     uint64_t satellite_mask = rtcm_get_bits(payload, 73, 64);
     uint32_t signal_mask = rtcm_get_bits(payload, 137, 32);
@@ -87,7 +97,8 @@ RTCMDecodedMessage handle_msm7_message(const uint8_t *payload, size_t payload_si
 
     size_t satellite_data_offset = 169 + nsat * nsig;
 
-    printf("Number of satellites: %zu, Number of signals: %zu, Number of cells: %zu\n", nsat, nsig, ncell);
+    if (verbose)
+        printf("Number of satellites: %zu, Number of signals: %zu, Number of cells: %zu\n", nsat, nsig, ncell);
 
     size_t bit_count = 0;
 
@@ -125,10 +136,11 @@ RTCMDecodedMessage handle_msm7_message(const uint8_t *payload, size_t payload_si
             rtcm_get_signed_bits(payload, offset + i * bit_count, bit_count);
     offset += nsat * bit_count;
 
-    for (size_t i = 0; i < nsat; i++)
-        printf("Satellite %u: rough_range_ms=%u, extended_info=%u, rough_range_modulo=%u, rough_phase_range_rate=%d\n",
-               satellites[i].satellite_id, satellites[i].rough_range_ms, satellites[i].extended_info,
-               satellites[i].rough_range_modulo, satellites[i].rough_phase_range_rate);
+    if (verbose)
+        for (size_t i = 0; i < nsat; i++)
+            printf("Satellite %u: rough_range_ms=%u, extended_info=%u, rough_range_modulo=%u, rough_phase_range_rate=%d\n",
+                   satellites[i].satellite_id, satellites[i].rough_range_ms, satellites[i].extended_info,
+                   satellites[i].rough_range_modulo, satellites[i].rough_phase_range_rate);
 
     RtcmMsm7CellData cells[ncell];
 
@@ -169,12 +181,14 @@ RTCMDecodedMessage handle_msm7_message(const uint8_t *payload, size_t payload_si
 
     offset += ncell * bit_count;
 
-    printf("Parsed %zu cells\n", ncell);
-    for (size_t i = 0; i < ncell; i++)
-        printf("Cell %zu: fine_pseudorange=%u, fine_phase_range=%d, lock_time=%u, half_cycle_indicator=%u, cnr=%u, fine_phase_range_rate=%d\n",
-               i, cells[i].fine_pseudorange, cells[i].fine_phase_range,
-               cells[i].lock_time, cells[i].half_cycle_indicator,
-               cells[i].cnr, cells[i].fine_phase_range_rate);
+    if (verbose)
+        printf("Parsed %zu cells\n", ncell);
+    if (verbose)
+        for (size_t i = 0; i < ncell; i++)
+            printf("Cell %zu: fine_pseudorange=%u, fine_phase_range=%d, lock_time=%u, half_cycle_indicator=%u, cnr=%u, fine_phase_range_rate=%d\n",
+                   i, cells[i].fine_pseudorange, cells[i].fine_phase_range,
+                   cells[i].lock_time, cells[i].half_cycle_indicator,
+                   cells[i].cnr, cells[i].fine_phase_range_rate);
 
     size_t cell_index = 0;
 
@@ -200,11 +214,96 @@ RTCMDecodedMessage handle_msm7_message(const uint8_t *payload, size_t payload_si
             if (isnan(pseudorange_m))
                 continue;
 
-            printf("GPS %u, signal %zu: pseudorange = %.3f m\n",
-                   sat->satellite_id, sig + 1, pseudorange_m);
+            RTCMMSM7Observation *obs =
+                &msm7->observations[msm7->observation_count++];
+
+            *obs = (RTCMMSM7Observation){
+                .satellite_id = sat->satellite_id,
+                .signal_id = sig + 1,
+                .pseudorange_m = pseudorange_m,
+                .cnr_dbhz = cell->cnr / 16.0,
+                .fine_phase_range = cell->fine_phase_range,
+                .fine_phase_range_rate = cell->fine_phase_range_rate,
+                .lock_time = cell->lock_time,
+                .half_cycle_indicator = cell->half_cycle_indicator};
         }
     }
-    return (RTCMDecodedMessage){.type = RTCM_TYPE_MSM7};
+
+    return result;
+}
+
+RTCMDecodedMessage handle_ephemeris_message(const uint8_t *rtcm_payload, int payload_size)
+{
+    RTCMDecodedMessage result = {
+        .type = RTCM_TYPE_UNKNOWN};
+
+    // RTCM 1019 : 488 bits = 61 octets
+    if (!rtcm_payload || payload_size < 61)
+        return result;
+
+    if (rtcm_get_bits(rtcm_payload, 0, 12) != 1019)
+        return result;
+
+    result.type = RTCM_TYPE_EPHEMERIS;
+
+    RTCMEphemerisMessage *eph = &result.data.ephemeris;
+#define GPS_PI 3.14159265358979323846
+
+    // Identification satellite
+    eph->satellite_id = rtcm_get_bits(rtcm_payload, 12, 6);
+    eph->gps_week = rtcm_get_bits(rtcm_payload, 18, 10);
+    eph->ura = rtcm_get_bits(rtcm_payload, 28, 4);
+    eph->l2_code = rtcm_get_bits(rtcm_payload, 32, 2);
+
+    // Paramètres d'horloge et indices
+    eph->idot_rad_s = rtcm_get_signed_bits(rtcm_payload, 34, 14) * 0x1p-43 * GPS_PI;
+    eph->iode = rtcm_get_bits(rtcm_payload, 48, 8);
+
+    eph->toc_s = rtcm_get_bits(rtcm_payload, 56, 16) * 16.0;
+    eph->af2_s_per_s2 = rtcm_get_signed_bits(rtcm_payload, 72, 8) * 0x1p-55;
+    eph->af1_s_per_s = rtcm_get_signed_bits(rtcm_payload, 80, 16) * 0x1p-43;
+    eph->af0_s = rtcm_get_signed_bits(rtcm_payload, 96, 22) * 0x1p-31;
+
+    eph->iodc = rtcm_get_bits(rtcm_payload, 118, 10);
+
+    // Paramètres orbitaux
+    eph->crs_m = rtcm_get_signed_bits(rtcm_payload, 128, 16) * 0x1p-5;
+    eph->delta_n_rad_s = rtcm_get_signed_bits(rtcm_payload, 144, 16) * 0x1p-43 * GPS_PI;
+    eph->m0_rad = rtcm_get_signed_bits(rtcm_payload, 160, 32) * 0x1p-31 * GPS_PI;
+    eph->cuc_rad = rtcm_get_signed_bits(rtcm_payload, 192, 16) * 0x1p-29;
+
+    eph->eccentricity = rtcm_get_bits(rtcm_payload, 208, 32) * 0x1p-33;
+
+    eph->cus_rad = rtcm_get_signed_bits(rtcm_payload, 240, 16) * 0x1p-29;
+    eph->sqrt_a_sqrt_m = rtcm_get_bits(rtcm_payload, 256, 32) * 0x1p-19;
+    eph->toe_s = rtcm_get_bits(rtcm_payload, 288, 16) * 16.0;
+
+    eph->cic_rad = rtcm_get_signed_bits(rtcm_payload, 304, 16) * 0x1p-29;
+    eph->omega0_rad = rtcm_get_signed_bits(rtcm_payload, 320, 32) * 0x1p-31 * GPS_PI;
+    eph->cis_rad = rtcm_get_signed_bits(rtcm_payload, 352, 16) * 0x1p-29;
+    eph->i0_rad = rtcm_get_signed_bits(rtcm_payload, 368, 32) * 0x1p-31 * GPS_PI;
+    eph->crc_m = rtcm_get_signed_bits(rtcm_payload, 400, 16) * 0x1p-5;
+    eph->omega_rad = rtcm_get_signed_bits(rtcm_payload, 416, 32) * 0x1p-31 * GPS_PI;
+
+    eph->omega_dot_rad_s = rtcm_get_signed_bits(rtcm_payload, 448, 24) * 0x1p-43 * GPS_PI;
+
+    // État satellite
+    eph->tgd_s = rtcm_get_signed_bits(rtcm_payload, 472, 8) * 0x1p-31;
+    eph->sv_health = rtcm_get_bits(rtcm_payload, 480, 6);
+    eph->l2_p_flag = rtcm_get_bits(rtcm_payload, 486, 1);
+    eph->fit_interval = rtcm_get_bits(rtcm_payload, 487, 1);
+
+    // Debug
+    printf("GPS PRN: %u\n", eph->satellite_id);
+    printf("GPS week (10 bits): %u\n", eph->gps_week);
+    printf("IODE: %u\n", eph->iode);
+    printf("Toe: %.0f s\n", eph->toe_s);
+    printf("sqrtA: %.6f sqrt(m)\n", eph->sqrt_a_sqrt_m);
+    printf("Semi-major axis: %.3f km\n",
+           eph->sqrt_a_sqrt_m * eph->sqrt_a_sqrt_m / 1000.0);
+    printf("Eccentricity: %.9f\n", eph->eccentricity);
+
+    return result;
 }
 
 RTCMDecodedMessage handle_rtcm_frame(const uint8_t *rtcm_payload, int payload_size)
@@ -217,13 +316,16 @@ RTCMDecodedMessage handle_rtcm_frame(const uint8_t *rtcm_payload, int payload_si
     switch (message_type)
     {
     case 1006:
-        printf("Handling message type Station ECEF\n");
+        // printf("Handling message type Station ECEF\n");
         return handle_station_message(rtcm_payload, payload_size);
-        break;
     case 1077:
-        printf("Handling message type MSM7\n");
+        //  printf("Handling message type MSM7\n");
         return handle_msm7_message(rtcm_payload, payload_size);
+    case 1019:
+        printf("Handling message type 1019\n");
+        return handle_ephemeris_message(rtcm_payload, payload_size);
+    default:
+        return (RTCMDecodedMessage){.type = RTCM_TYPE_UNKNOWN};
         break;
     }
-    return (RTCMDecodedMessage){.type = RTCM_TYPE_UNKNOWN};
 }

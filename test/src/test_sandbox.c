@@ -49,6 +49,14 @@ void test_sandbox_function()
                 break;
             case RTCM_TYPE_MSM7:
                 printf("Received RTCM message type MSM\n");
+                if (0)
+                    for (int obs = 0; obs < message->data.msm7.observation_count; obs++)
+                    {
+                        RTCMMSM7Observation *observation = &message->data.msm7.observations[obs];
+                        printf("Observation %d: satellite_id=%u, signal_id=%u, pseudorange_m=%.3f, cnr_dbhz=%.3f\n",
+                               obs, observation->satellite_id, observation->signal_id,
+                               observation->pseudorange_m, observation->cnr_dbhz);
+                    }
                 break;
             default:
                 printf("Received RTCM message type %d\n", message->type);
