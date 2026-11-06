@@ -20,7 +20,8 @@ bool run_sim_csv_test(const char *path)
     GnssReceiver *receiver = gnss_receiver_create(GNSS_SIMULATION_MAX_SATELLITES_PER_MEASUREMENT);
     gnss_receiver_initialize(receiver);
 
-    double last_error_norm = 0.0;
+    double error_norm_threshold = 25.0;
+    double last_error_norm = error_norm_threshold * 10.0;
     GnssSimulationEpoch *epoch = gnss_simulator_step(simulator);
     while (epoch)
     {
@@ -59,9 +60,9 @@ bool run_sim_csv_test(const char *path)
     gnss_simulator_free(simulator);
 
     printf("Last error norm: %f\n", last_error_norm);
-    if (25.0 < last_error_norm)
+    if (error_norm_threshold < last_error_norm)
     {
-        printf("Warning: Last error norm exceeded 25.0\n");
+        printf("Warning: Last error norm exceeded %f\n", error_norm_threshold);
         return false;
     }
     else
@@ -73,7 +74,7 @@ bool run_sim_csv_test(const char *path)
 
 void test_gnss_sim()
 {
-    if (!run_sim_csv_test("/home/edwindc/workspace/gnss_poc/simulation_data/batch_2026-10-31_20-29-50/"))
+    if (!run_sim_csv_test("./simulation_data/batch_2026-10-31_20-29-50/"))
         printf("Simulation test failed\n");
     else
         printf("Simulation test succeeded\n");
