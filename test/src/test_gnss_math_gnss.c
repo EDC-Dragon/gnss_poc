@@ -62,13 +62,13 @@ void run_pseudorange_tests()
     // Satellite pseudorange tests
     PseudoRangeTestCase tests[] = {
         {.sat = satellites[0], .receiver = receivers[0], .expected_status = gnssResult[0], .expected_pseudorange_m = expected_pseudoranges_m[0], .should_pass = true},
-        {.sat = satellites[0], .receiver = receivers[0], .expected_status = gnssResult[1], .expected_pseudorange_m = expected_pseudoranges_m[1], .should_pass = false},
-        {.sat = satellites[1], .receiver = receivers[1], .expected_status = gnssResult[1], .expected_pseudorange_m = expected_pseudoranges_m[2], .should_pass = true},
-        {.sat = satellites[2], .receiver = receivers[2], .expected_status = gnssResult[2], .expected_pseudorange_m = expected_pseudoranges_m[3], .should_pass = true},
-        {.sat = satellites[3], .receiver = receivers[3], .expected_status = gnssResult[3], .expected_pseudorange_m = expected_pseudoranges_m[4], .should_pass = true},
-        {.sat = satellites[4], .receiver = receivers[4], .expected_status = gnssResult[4], .expected_pseudorange_m = expected_pseudoranges_m[5], .should_pass = true},
-        {.sat = satellites[5], .receiver = receivers[5], .expected_status = gnssResult[5], .expected_pseudorange_m = expected_pseudoranges_m[6], .should_pass = true},
-        {.sat = satellites[6], .receiver = receivers[6], .expected_status = gnssResult[6], .expected_pseudorange_m = expected_pseudoranges_m[7], .should_pass = true}};
+        {.sat = satellites[0], .receiver = receivers[0], .expected_status = gnssResult[0], .expected_pseudorange_m = expected_pseudoranges_m[1], .should_pass = false},
+        {.sat = satellites[1], .receiver = receivers[1], .expected_status = gnssResult[1], .expected_pseudorange_m = expected_pseudoranges_m[1], .should_pass = true},
+        {.sat = satellites[2], .receiver = receivers[2], .expected_status = gnssResult[2], .expected_pseudorange_m = expected_pseudoranges_m[2], .should_pass = true},
+        {.sat = satellites[3], .receiver = receivers[3], .expected_status = gnssResult[3], .expected_pseudorange_m = expected_pseudoranges_m[3], .should_pass = true},
+        {.sat = satellites[4], .receiver = receivers[4], .expected_status = gnssResult[4], .expected_pseudorange_m = expected_pseudoranges_m[4], .should_pass = true},
+        {.sat = satellites[5], .receiver = receivers[5], .expected_status = gnssResult[5], .expected_pseudorange_m = expected_pseudoranges_m[5], .should_pass = true},
+        {.sat = satellites[6], .receiver = receivers[6], .expected_status = gnssResult[6], .expected_pseudorange_m = expected_pseudoranges_m[6], .should_pass = true}};
 
     printf("========================================\n");
     printf("Running pseudorange tests...\n");
