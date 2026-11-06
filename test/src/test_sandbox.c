@@ -3,13 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
-#include "network/gnss_tcp.h"
-#include "data_acquisition/gnss_rtcm_decoder.h"
-#include "receiver/gnss_receiver.h"
-#include "data_acquisition/gnss_rtcm_tcp_receiver.h"
-#include "satellite/gnns_constellation.h"
+#include "tools/network/gnss_tcp.h"
+#include "data_acquisition/rtcm/decoder/gnss_rtcm_decoder.h"
+#include "gnss_core/receiver/gnss_receiver.h"
+#include "data_acquisition/rtcm/network/gnss_rtcm_tcp_receiver.h"
+#include "gnss_core/satellite/gnns_constellation.h"
 
-#include "gnss_types.h"
+#include "gnss_core/gnss_types.h"
 
 void test_sandbox_function()
 {

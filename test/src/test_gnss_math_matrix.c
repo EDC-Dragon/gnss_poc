@@ -4,7 +4,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "math/gnss_math_matrix.h"
+#include "tools/math/gnss_math_matrix.h"
 
 #define EPSILON 1e-9
 

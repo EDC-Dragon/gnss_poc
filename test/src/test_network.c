@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "network/gnss_tcp.h"
+#include "tools/network/gnss_tcp.h"
 
 void test_example_tcp()
 {

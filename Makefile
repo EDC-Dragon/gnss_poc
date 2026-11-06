@@ -7,17 +7,21 @@ LDLIBS = -lm
 
 BUILD_DIR = build
 
-CODE_SRC = src/*.c
-CODE_SRC += src/math/*.c
-CODE_SRC += src/satellite/*.c
-CODE_SRC += src/simulation/*.c
-CODE_SRC += src/data_acquisition/*.c
-CODE_SRC += src/receiver/*.c
-CODE_SRC += src/receiver/solver/*.c
-CODE_SRC += src/receiver/estimator/*.c
-CODE_SRC += src/receiver/estimator/kalman_filter/*.c
+CODE_SRC += src/tools/*.c
+CODE_SRC += src/tools/network/*.c
+CODE_SRC += src/tools/math/*.c
 
-CODE_SRC += src/network/*.c
+CODE_SRC += src/data_acquisition/rtcm/decoder/*.c
+CODE_SRC += src/data_acquisition/rtcm/network/*.c
+CODE_SRC += src/data_acquisition/simulation/*.c
+
+CODE_SRC += src/gnss_core/*.c 
+CODE_SRC += src/gnss_core/satellite/*.c 
+CODE_SRC += src/gnss_core/receiver/*.c
+CODE_SRC += src/gnss_core/receiver/solver/*.c
+CODE_SRC += src/gnss_core/receiver/estimator/*.c
+CODE_SRC += src/gnss_core/receiver/estimator/kalman_filter/*.c
+
 CODE_SRC += plugins/tinycsocket/src/*.c
 
 TARGET = $(BUILD_DIR)/gnss_poc

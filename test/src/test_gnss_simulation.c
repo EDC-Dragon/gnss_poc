@@ -4,12 +4,12 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "gnss_types.h"
-#include "receiver/solver/gnss_solver.h"
-#include "math/gnss_math.h"
-#include "simulation/gnss_simulation.h"
-#include "simulation/gnss_simulation_csv_reader.h"
-#include "receiver/gnss_receiver.h"
+#include "gnss_core/gnss_types.h"
+#include "gnss_core/receiver/solver/gnss_solver.h"
+#include "tools/math/gnss_math.h"
+#include "data_acquisition/simulation/gnss_simulation.h"
+#include "data_acquisition/simulation/gnss_simulation_csv_reader.h"
+#include "gnss_core/receiver/gnss_receiver.h"
 
 void run_sim_csv_test(const char *path)
 {
