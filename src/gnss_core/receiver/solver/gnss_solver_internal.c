@@ -1,7 +1,6 @@
 #include "gnss_solver_internal.h"
 
 #include <math.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 

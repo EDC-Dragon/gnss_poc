@@ -1,9 +1,7 @@
 #include "gnss_core/receiver/estimator/gnss_state_estimator.h"
 
 #include <stdlib.h>
-#include <stdbool.h>
 #include <stdio.h>
-#include <math.h>
 
 #include "tools/math/gnss_math.h"
 #include "gnss_core/receiver/estimator/kalman_filter/gnss_kalman_filter.h"

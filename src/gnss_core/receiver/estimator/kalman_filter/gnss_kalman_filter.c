@@ -1,7 +1,6 @@
 #include "gnss_core/receiver/estimator/kalman_filter/gnss_kalman_filter.h"
 
 #include <stdlib.h>
-#include <math.h>
 #include <stdio.h>
 
 #include "gnss_kalman_filter_internal.h"

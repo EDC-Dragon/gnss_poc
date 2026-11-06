@@ -1,9 +1,6 @@
 #pragma once
 
-#include <stdbool.h>
-
 #include "gnss_core/gnss_types.h"
-#include "gnss_kalman_filter_types.h"
 
 typedef struct GnssKalmanFilter GnssKalmanFilter;
 

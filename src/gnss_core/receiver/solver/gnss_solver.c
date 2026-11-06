@@ -1,13 +1,10 @@
 #include "gnss_core/receiver/solver/gnss_solver.h"
 
-#include <math.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "gnss_core/gnss_types.h"
 #include "data_acquisition/simulation/gnss_simulation.h"
-#include "tools/math/gnss_math_noise.h"
 #include "gnss_core/receiver/gnss_receiver.h"
 
 #include "gnss_solver_internal.h"

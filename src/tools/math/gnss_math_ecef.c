@@ -1,7 +1,5 @@
-#include "gnss_core/gnss_types.h"
+#include "tools/math/gnss_math_ecef.h"
 
-#include <stdio.h>
-#include <string.h>
 #include <math.h>
 
 Vec3 vec3_subtract(const Vec3 *a, const Vec3 *b)

@@ -14,8 +14,7 @@ CODE_SRC += src/tools/math/*.c
 CODE_SRC += src/data_acquisition/rtcm/decoder/*.c
 CODE_SRC += src/data_acquisition/rtcm/network/*.c
 CODE_SRC += src/data_acquisition/simulation/*.c
-
-CODE_SRC += src/gnss_core/*.c 
+ 
 CODE_SRC += src/gnss_core/satellite/*.c 
 CODE_SRC += src/gnss_core/receiver/*.c
 CODE_SRC += src/gnss_core/receiver/solver/*.c

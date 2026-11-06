@@ -70,6 +70,7 @@ double msm7_pseudorange_m(
 
 RTCMDecodedMessage handle_msm7_message(const uint8_t *payload, size_t payload_size, bool verbose) // Hard one =O
 {
+    (void)payload_size;
 
     RTCMDecodedMessage result = {
         .type = RTCM_TYPE_MSM7};

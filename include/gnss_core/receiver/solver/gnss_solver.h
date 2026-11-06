@@ -6,8 +6,6 @@
 #include "gnss_core/gnss_types.h"
 #include "gnss_core/satellite/gnss_satellite.h"
 
-#include "gnss_solver_types.h"
-
 typedef struct GnssSolver GnssSolver;
 
 ///////////////////////

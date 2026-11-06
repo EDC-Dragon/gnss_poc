@@ -2,7 +2,6 @@
 
 #include <stdlib.h>
 #include <math.h>
-#include <stdio.h>
 
 #include "tools/math/gnss_math_matrix.h"
 

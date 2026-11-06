@@ -1,8 +1,6 @@
 #include "tools/math/gnss_math.h"
 
-#include <stdlib.h>
 #include <math.h>
-#include <stdint.h>
 
 #include "gnss_core/gnss_types.h"
 

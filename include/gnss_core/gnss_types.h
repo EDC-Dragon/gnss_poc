@@ -1,21 +1,7 @@
 #pragma once
 
-#include <stddef.h>
 #include <stdint.h>
-
-#define C_MS 299792458.0
-
-typedef struct
-{
-    double x;
-    double y;
-    double z;
-} Vec3;
-
-Vec3 vec3_subtract(const Vec3 *a, const Vec3 *b);
-double vec3_length(const Vec3 *v);
-void vec3_normalize(Vec3 *v);
-double vec3_distance(const Vec3 *a, const Vec3 *b);
+#include "tools/math/gnss_math_ecef.h"
 
 typedef uint64_t SatelliteId;
 
