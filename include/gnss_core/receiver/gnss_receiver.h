@@ -20,3 +20,8 @@ void gnss_receiver_initialize(GnssReceiver *receiver);
 //      GNSS_STATUS_OK if the update was successful
 //      GNSS_STATUS_X otherwise
 GnssStatus gnss_receiver_update(GnssReceiver *receiver, GnssMeasurement *measurements, size_t measurement_count, double time_s);
+
+// Get the current estimated state of the receiver
+// Returns:
+//      Pointer to the estimated state, might not be fully initialized
+GnssEstimatedState *gnss_receiver_get_estimated_state(GnssReceiver *receiver);

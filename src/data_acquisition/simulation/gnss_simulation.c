@@ -14,7 +14,8 @@
 GnssMeasurement simulate_pseudorange_measurement(
     const Satellite *sat,
     const GnssPositionClockState *true_receiver,
-    double reception_time_s)
+    double reception_time_s,
+    double noise_ratio)
 {
     if (!sat || !true_receiver)
         return (GnssMeasurement){.status = GNSS_INVALID_ARGUMENT};
@@ -27,7 +28,7 @@ GnssMeasurement simulate_pseudorange_measurement(
         return (GnssMeasurement){.status = GNSS_NUMERICAL_ERROR};
 
     double noise = sat->error_model.bias_m + gaussian_noise_at_time(sat->id, reception_time_s, sat->error_model.noise_sigma_m);
-    double pseudorange_with_noise = pseudorange + noise;
+    double pseudorange_with_noise = pseudorange + noise * noise_ratio;
     double sigma_m = sat->error_model.noise_sigma_m;
 
     double transmission_time_s = reception_time_s - distance / C_MS;

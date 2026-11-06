@@ -5,7 +5,6 @@
 
 #include "gnss_kalman_filter_internal.h"
 #include "tools/math/gnss_math_matrix.h"
-#include "gnss_core/receiver/estimator/kalman_filter/gnss_kalman_filter_types.h"
 
 struct GnssKalmanFilter
 {
@@ -18,12 +17,21 @@ struct GnssKalmanFilter
 GnssKalmanFilter *gnss_kalman_filter_create()
 {
     GnssKalmanFilter *kf = malloc(sizeof(GnssKalmanFilter));
+    if (!kf)
+        return NULL;
     kf->internal = gnss_kalman_filter_internal_create();
+    if (!kf->internal)
+    {
+        free(kf);
+        return NULL;
+    }
     return kf;
 }
 
 void gnss_kalman_filter_destroy(GnssKalmanFilter *kf)
 {
+    if (!kf)
+        return;
     if (kf->internal)
         gnss_kalman_filter_internal_free(kf->internal);
     free(kf);
@@ -31,6 +39,8 @@ void gnss_kalman_filter_destroy(GnssKalmanFilter *kf)
 
 void gnss_kalman_filter_initialize(GnssKalmanFilter *kf)
 {
+    if (!kf)
+        return;
     kf->state_initialized = false;
     kf->estimated_state.time_s = 0;
     for (int i = 0; i < 6; i++)
@@ -42,6 +52,8 @@ void gnss_kalman_filter_initialize(GnssKalmanFilter *kf)
 
 void gnss_kalman_filter_print(GnssKalmanFilter *kf)
 {
+    if (!kf)
+        return;
     printf("GnssKalmanFilter:\n");
     printf("  state_initialized: %s\n", kf->state_initialized ? "true" : "false");
     printf("  state: [");
@@ -60,6 +72,8 @@ void gnss_kalman_filter_print(GnssKalmanFilter *kf)
 
 GnssStatus gnss_kalman_filter_initialize_state(GnssKalmanFilter *kalman_filter, const GnssPositionClockState *measurement)
 {
+    if (!kalman_filter || !measurement)
+        return GNSS_INVALID_ARGUMENT;
     kalman_filter->estimated_state.state[0] = measurement->position.x;
     kalman_filter->estimated_state.state[1] = measurement->position.y;
     kalman_filter->estimated_state.state[2] = measurement->position.z;
@@ -86,10 +100,19 @@ GnssStatus gnss_kalman_filter_initialize_state(GnssKalmanFilter *kalman_filter, 
 
 GnssStatus gnss_kalman_filter_update(GnssKalmanFilter *kf, GnssPositionClockState *measurement)
 {
+    if (!kf || !measurement)
+        return GNSS_INVALID_ARGUMENT;
     if (!kf->state_initialized)
         return gnss_kalman_filter_initialize_state(kf, measurement);
     else
     {
         return gnss_kalman_filter_internal_update(kf->internal, &kf->estimated_state, measurement);
     }
+}
+
+GnssKalmanState *gnss_kalman_filter_get_estimated_state(GnssKalmanFilter *kf)
+{
+    if (!kf)
+        return NULL;
+    return &kf->estimated_state;
 }

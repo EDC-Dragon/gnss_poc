@@ -5,6 +5,7 @@
 
 #include "tools/math/gnss_math.h"
 #include "gnss_core/receiver/estimator/kalman_filter/gnss_kalman_filter.h"
+#include "gnss_core/receiver/estimator/kalman_filter/gnss_kalman_filter_types.h"
 
 struct GnssStateEstimator
 {
@@ -27,6 +28,11 @@ GnssStateEstimator *gnss_state_estimator_create()
         return NULL;
     }
     estimator->kalman_filter = gnss_kalman_filter_create();
+    if (estimator->kalman_filter == NULL)
+    {
+        free(estimator);
+        return NULL;
+    }
     return estimator;
 }
 
@@ -48,7 +54,15 @@ GnssStatus gnss_state_estimator_update(GnssStateEstimator *estimator, GnssPositi
     }
     printf("     ------------------------         \n");
 
-    gnss_kalman_filter_update(estimator->kalman_filter, measurement);
+    GnssStatus kalman_status = gnss_kalman_filter_update(estimator->kalman_filter, measurement);
+    if (kalman_status != GNSS_OK)
+        return kalman_status;
+
+    GnssKalmanState *kf_state = gnss_kalman_filter_get_estimated_state(estimator->kalman_filter);
+    estimator->estimated_state.position = (Vec3){kf_state->state[0], kf_state->state[1], kf_state->state[2]};
+    estimator->estimated_state.velocity = (Vec3){kf_state->state[3], kf_state->state[4], kf_state->state[5]};
+    estimator->estimated_state.clock_bias_m = measurement->clock_bias_m;
+    estimator->estimated_state.time_s = measurement->time_s;
 
     gnss_state_estimator_print(estimator);
     return GNSS_OK;
@@ -61,5 +75,7 @@ GnssEstimatedState *gnss_state_estimator_get_estimated_state(GnssStateEstimator 
 
 void gnss_state_estimator_free(GnssStateEstimator *estimator)
 {
+    if (estimator->kalman_filter)
+        gnss_kalman_filter_destroy(estimator->kalman_filter);
     free(estimator);
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gnss_core/gnss_types.h"
+#include "gnss_core/receiver/estimator/kalman_filter/gnss_kalman_filter_types.h"
 
 typedef struct GnssKalmanFilter GnssKalmanFilter;
 
@@ -20,3 +21,6 @@ void gnss_kalman_filter_print(GnssKalmanFilter *kf);
 //      GNSS_STATUS_OK if the update was successful
 //      GNSS_STATUS_X otherwise
 GnssStatus gnss_kalman_filter_update(GnssKalmanFilter *kf, GnssPositionClockState *measurement);
+
+// Get the estimated state from the Kalman filter
+GnssKalmanState *gnss_kalman_filter_get_estimated_state(GnssKalmanFilter *kf);

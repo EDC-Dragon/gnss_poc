@@ -79,7 +79,7 @@ GnssSimulationData *read_simulation_csv(const char *path)
 
     FILE *stream = fopen(path, "r");
     bool is_first = true;
-    int csv_fields_index[CSV_FIELD_COUNT] = {-1, -1, -1, -1, -1, -1, -1, -1};
+    int csv_fields_index[CSV_FIELD_COUNT] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
     char raw_line[1024];
     GnssSimulationEpoch *current_epoch = NULL;
     while (fgets(raw_line, sizeof(raw_line), stream))

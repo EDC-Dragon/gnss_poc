@@ -19,6 +19,8 @@ struct GnssReceiver
     GnssMeasurement *measurements;
     size_t satellite_count;
     size_t max_satellite_count;
+
+    GnssPositionVelocityTimeState estimated_state; // Redundant with state_estimator's internal state, to improve
 };
 
 GnssReceiver *gnss_receiver_create(size_t max_satellite_count)
@@ -165,10 +167,19 @@ GnssStatus gnss_receiver_update(GnssReceiver *receiver, GnssMeasurement *measure
     GnssPositionClockState *estimated_state_from_solver = gnss_solver_get_estimated_state(receiver->solver);
 
     printf("State estimation...\n");
-    gnss_state_estimator_update(receiver->state_estimator, estimated_state_from_solver);
+    GnssStatus status = gnss_state_estimator_update(receiver->state_estimator, estimated_state_from_solver);
+    if (status != GNSS_OK)
+        return status;
 
     GnssEstimatedState *estimated_state = gnss_state_estimator_get_estimated_state(receiver->state_estimator);
     gnss_estimated_state_print(estimated_state);
-    printf("Done\n");
+
     return GNSS_OK;
+}
+
+GnssEstimatedState *gnss_receiver_get_estimated_state(GnssReceiver *receiver)
+{
+    if (!receiver || !receiver->state_estimator)
+        return NULL;
+    return gnss_state_estimator_get_estimated_state(receiver->state_estimator);
 }
