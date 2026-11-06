@@ -3,6 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_SATELLITES_PER_CONSTELLATION 64
+
+struct GnssConstellation
+{
+    Satellite satellites[MAX_SATELLITES_PER_CONSTELLATION];
+};
+
 GnssConstellation *gnss_constellation_create()
 {
     GnssConstellation *constellation = (GnssConstellation *)malloc(sizeof(GnssConstellation));

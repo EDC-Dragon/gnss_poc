@@ -7,12 +7,14 @@
 #define GNSS_SIMULATION_MAX_SATELLITES_PER_MEASUREMENT 32
 #define GNSS_SIMULATION_MAX_EPOCHS 10000
 
+// Real receiver state in the simulation
 typedef struct
 {
     Vec3 position;
     Vec3 velocity;
 } GnssSimulationRealReceiverState;
 
+// Single epoch
 typedef struct
 {
     double time_s;
@@ -21,6 +23,7 @@ typedef struct
     GnssSimulationRealReceiverState real_receiver_state;
 } GnssSimulationEpoch;
 
+// Complete imulation data (mmultiple epochs)
 typedef struct
 {
     bool is_valid;

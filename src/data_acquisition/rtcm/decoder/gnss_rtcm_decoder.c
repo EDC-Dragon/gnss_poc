@@ -5,6 +5,16 @@
 
 #include "data_acquisition/rtcm/decoder/gnss_rtcm_decoder_internal.h"
 
+struct RTCMFrameDecoder
+{
+    uint8_t current_frame[4096]; // Buffer to store the current RTCM frame being decoded
+    int current_frame_size;      // Size of the current RTCM frame being decoded
+    int expected_frame_size;     // Expected size of the current RTCM frame being decoded
+
+    RTCMDecodedMessage messages[RTCM_MAX_MESSAGES]; // Array to store decoded RTCM messages
+    size_t message_count;                           // Number of decoded RTCM messages stored
+};
+
 RTCMFrameDecoder *rtcm_frame_decoder_create(void)
 {
     RTCMFrameDecoder *decoder = (RTCMFrameDecoder *)malloc(sizeof(RTCMFrameDecoder));

@@ -5,6 +5,7 @@
 #include "gnss_core/receiver/estimator/gnss_state_estimator.h"
 #include "gnss_core/receiver/solver/gnss_solver.h"
 
+// GNSS receiver representation, receives GNSS measurements and estimates receiver state
 typedef struct GnssReceiver GnssReceiver;
 
 // Allocation/Deallocation
@@ -14,4 +15,8 @@ void gnss_receiver_free(GnssReceiver *receiver);
 // Initialization
 void gnss_receiver_initialize(GnssReceiver *receiver);
 
-void gnss_receiver_update(GnssReceiver *receiver, GnssMeasurement *measurements, size_t measurement_count, double time_s);
+// Update the receiver with new measurements
+// Returns:
+//      GNSS_STATUS_OK if the update was successful
+//      GNSS_STATUS_X otherwise
+GnssStatus gnss_receiver_update(GnssReceiver *receiver, GnssMeasurement *measurements, size_t measurement_count, double time_s);

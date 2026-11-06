@@ -7,20 +7,18 @@
 
 #define RTCM_MAX_MESSAGES 128
 
-typedef struct
-{
-    uint8_t current_frame[4096];
-    int current_frame_size;
-    int expected_frame_size;
+// RTCM frame decoder structure and functions for decoding and storing RTCM messages
+typedef struct RTCMFrameDecoder RTCMFrameDecoder;
 
-    RTCMDecodedMessage messages[RTCM_MAX_MESSAGES];
-    size_t message_count;
-
-} RTCMFrameDecoder;
-
+// Allocation
 RTCMFrameDecoder *rtcm_frame_decoder_create(void);
+// Deallocation
 void rtcm_frame_decoder_free(RTCMFrameDecoder *decoder);
 
+// Feed data into the RTCM frame decoder for processing
 void rtcm_frame_decoder_feed(RTCMFrameDecoder *decoder, const uint8_t *data, size_t data_size, bool verbose);
 
+// Dequeue the next decoded RTCM message from the decoder
+// Returns:
+//      NULL if no decoded message is available
 RTCMDecodedMessage *rtcm_frame_decoder_dequeue(RTCMFrameDecoder *decoder);

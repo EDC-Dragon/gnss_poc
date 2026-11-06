@@ -27,7 +27,7 @@ void test_sandbox_function()
     if (!tcp_receiver)
         return;
 
-    if (!gnss_rtcm_tcp_receiver_connect(tcp_receiver, "crtk.net", 2101, "SAOG"))
+    if (!gnss_rtcm_tcp_receiver_connect(tcp_receiver, "crtk.net", 2101, "CDFX"))
         return;
 
     // Decoder
@@ -60,6 +60,7 @@ void test_sandbox_function()
                 printf("Station ECEF: x=%f, y=%f, z=%f\n", message->data.station.station_ecef.x, message->data.station.station_ecef.y, message->data.station.station_ecef.z);
                 break;
             case RTCM_TYPE_MSM7:
+            {
                 // printf("Received RTCM message type MSM\n");
                 double epoch_time_s = message->data.msm7.epoch_time_ms / 1000.0;
                 measurement_count = 0;
@@ -99,6 +100,7 @@ void test_sandbox_function()
                 }
 
                 break;
+            }
             case RTCM_TYPE_EPHEMERIS:
                 // printf("Received RTCM message type EPHEMERIS\n");
                 gnss_constellation_notify_ephemeris(constellation, message->data.ephemeris.satellite_id, message->data.ephemeris.ephemeris);

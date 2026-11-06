@@ -112,8 +112,9 @@ void gnss_receiver_add_measurement(GnssReceiver *receiver, GnssMeasurement measu
     }
 }
 
-void gnss_receiver_update(GnssReceiver *receiver, GnssMeasurement *measurements, size_t measurement_count, double time_s)
+GnssStatus gnss_receiver_update(GnssReceiver *receiver, GnssMeasurement *measurements, size_t measurement_count, double time_s)
 {
+    // Todo: better error handling
     for (size_t i = 0; i < measurement_count; i++)
         gnss_receiver_add_measurement(receiver, measurements[i]);
 
@@ -155,7 +156,7 @@ void gnss_receiver_update(GnssReceiver *receiver, GnssMeasurement *measurements,
     if (valid_satellite_count < 4)
     {
         printf("Not enough valid satellites\n");
-        return;
+        return GNSS_NUMERICAL_ERROR;
     }
 
     printf("Solving...\n");
@@ -169,4 +170,5 @@ void gnss_receiver_update(GnssReceiver *receiver, GnssMeasurement *measurements,
     GnssEstimatedState *estimated_state = gnss_state_estimator_get_estimated_state(receiver->state_estimator);
     gnss_estimated_state_print(estimated_state);
     printf("Done\n");
+    return GNSS_OK;
 }
