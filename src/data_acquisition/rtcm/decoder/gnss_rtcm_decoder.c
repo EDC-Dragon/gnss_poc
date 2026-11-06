@@ -13,6 +13,7 @@ struct RTCMFrameDecoder
 
     RTCMDecodedMessage messages[RTCM_MAX_MESSAGES]; // Array to store decoded RTCM messages
     size_t message_count;                           // Number of decoded RTCM messages stored
+    RTCMDecodedMessage dequeued_message;            // Stores the most recently dequeued RTCM message, very imperfect but useful ATM
 };
 
 RTCMFrameDecoder *rtcm_frame_decoder_create(void)
@@ -109,12 +110,13 @@ void rtcm_frame_decoder_feed(RTCMFrameDecoder *decoder, const uint8_t *data, siz
 
 RTCMDecodedMessage *rtcm_frame_decoder_dequeue(RTCMFrameDecoder *decoder)
 {
-    // Unperfect but works for now
+    // TODO: Implement a real queue
     if (decoder->message_count == 0)
         return NULL;
-    RTCMDecodedMessage *msg = &decoder->messages[0];
+    decoder->dequeued_message = decoder->messages[0]; // Store the most recently dequeued message
+    // Shift all remaining messages one position to the left
     for (size_t i = 1; i < decoder->message_count; i++)
         decoder->messages[i - 1] = decoder->messages[i];
     decoder->message_count--;
-    return msg;
+    return &decoder->dequeued_message; // Return a pointer to the stored message
 }
